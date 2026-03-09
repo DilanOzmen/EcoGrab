@@ -1,0 +1,17 @@
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\bin\Debug\net9.0\FoodWaste.Business.deps.json
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\bin\Debug\net9.0\FoodWaste.Business.dll
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\bin\Debug\net9.0\FoodWaste.Business.pdb
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\bin\Debug\net9.0\FoodWaste.Data.dll
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\bin\Debug\net9.0\FoodWaste.Entities.dll
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\bin\Debug\net9.0\FoodWaste.Data.pdb
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\bin\Debug\net9.0\FoodWaste.Entities.pdb
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\FoodWaste.Business.csproj.AssemblyReference.cache
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\FoodWaste.Business.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\FoodWaste.Business.AssemblyInfoInputs.cache
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\FoodWaste.Business.AssemblyInfo.cs
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\FoodWaste.Business.csproj.CoreCompileInputs.cache
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\FoodWast.E212F256.Up2Date
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\FoodWaste.Business.dll
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\refint\FoodWaste.Business.dll
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\FoodWaste.Business.pdb
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\ref\FoodWaste.Business.dll

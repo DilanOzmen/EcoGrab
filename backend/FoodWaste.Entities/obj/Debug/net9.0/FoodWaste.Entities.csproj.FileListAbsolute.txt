@@ -1,0 +1,11 @@
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\bin\Debug\net9.0\FoodWaste.Entities.deps.json
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\bin\Debug\net9.0\FoodWaste.Entities.dll
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\bin\Debug\net9.0\FoodWaste.Entities.pdb
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.AssemblyInfoInputs.cache
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.AssemblyInfo.cs
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.csproj.CoreCompileInputs.cache
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.dll
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\refint\FoodWaste.Entities.dll
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.pdb
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\ref\FoodWaste.Entities.dll
