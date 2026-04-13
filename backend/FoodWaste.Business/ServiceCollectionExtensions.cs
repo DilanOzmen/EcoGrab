@@ -10,7 +10,12 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAuthValidationService, AuthValidationService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<ISellerService, SellerService>();
+        services.AddScoped<ICustomerService, CustomerService>();
+        services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IProductStatusService, ProductStatusService>();
+        services.AddScoped<IReservationMaintenanceService, ReservationMaintenanceService>();
         return services;
     }
 }

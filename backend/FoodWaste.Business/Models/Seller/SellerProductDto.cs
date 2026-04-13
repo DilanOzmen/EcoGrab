@@ -4,6 +4,7 @@ public sealed record SellerProductDto(
     int Id,
     int RestaurantId,
     string RestaurantName,
+    string Category,
     string Name,
     string Description,
     decimal OriginalPrice,

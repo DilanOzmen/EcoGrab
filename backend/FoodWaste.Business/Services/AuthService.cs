@@ -13,16 +13,27 @@ public class AuthService(FoodWasteDbContext dbContext) : IAuthService
         string email,
         string password,
         string phone,
+        string role,
         CancellationToken cancellationToken = default)
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
         var emailExists = await dbContext.Users
-            .AnyAsync(x => x.Email == normalizedEmail, cancellationToken);
+            .AnyAsync(x => x.Email == normalizedEmail && !x.IsDeleted, cancellationToken);
 
         if (emailExists)
         {
             return new AuthResult(false, "Bu e-posta zaten kayitli.", 0, string.Empty, string.Empty, string.Empty);
+        }
+
+        if (!Enum.TryParse<UserRole>(role, true, out var userRole))
+        {
+            return new AuthResult(false, "Gecersiz rol secimi.", 0, string.Empty, string.Empty, string.Empty);
+        }
+
+        if (userRole == UserRole.Admin)
+        {
+            return new AuthResult(false, "Admin rolu kayit uzerinden olusturulamaz.", 0, string.Empty, string.Empty, string.Empty);
         }
 
         var user = new User
@@ -31,7 +42,9 @@ public class AuthService(FoodWasteDbContext dbContext) : IAuthService
             Email = normalizedEmail,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
             Phone = phone.Trim(),
-            Role = UserRole.Customer
+            Role = userRole,
+            IsActive = true,
+            IsApproved = userRole != UserRole.Seller
         };
 
         dbContext.Users.Add(user);
@@ -45,8 +58,7 @@ public class AuthService(FoodWasteDbContext dbContext) : IAuthService
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
         var user = await dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Email == normalizedEmail, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Email == normalizedEmail && !x.IsDeleted, cancellationToken);
 
         if (user is null)
         {
@@ -58,6 +70,19 @@ public class AuthService(FoodWasteDbContext dbContext) : IAuthService
         {
             return new AuthResult(false, "E-posta veya sifre hatali.", 0, string.Empty, string.Empty, string.Empty);
         }
+
+        if (!user.IsActive)
+        {
+            return new AuthResult(false, "Hesabiniz pasif durumda.", 0, string.Empty, string.Empty, string.Empty);
+        }
+
+        if (user.Role == UserRole.Seller && !user.IsApproved)
+        {
+            return new AuthResult(false, "Satici hesabi henuz onaylanmadi.", 0, string.Empty, string.Empty, string.Empty);
+        }
+
+        user.LastLoginAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         return new AuthResult(true, null, user.Id, user.FullName, user.Email, user.Role.ToString());
     }

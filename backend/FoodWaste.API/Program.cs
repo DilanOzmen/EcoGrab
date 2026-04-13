@@ -71,6 +71,8 @@ builder.Services
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddHostedService<ProductStatusHostedService>();
+builder.Services.AddHostedService<ReservationExpiryHostedService>();
 
 var app = builder.Build();
 

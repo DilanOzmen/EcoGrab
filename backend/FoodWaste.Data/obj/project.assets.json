@@ -2769,11 +2769,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj",
+      "projectUniqueName": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj",
       "projectName": "FoodWaste.Data",
-      "projectPath": "C:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj",
+      "projectPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj",
       "packagesPath": "C:\\Users\\yagmu\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\obj\\",
+      "outputPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

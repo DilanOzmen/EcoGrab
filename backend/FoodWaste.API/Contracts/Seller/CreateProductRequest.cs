@@ -2,6 +2,7 @@ namespace FoodWaste.API.Contracts.Seller;
 
 public sealed record CreateProductRequest(
     int RestaurantId,
+    string Category,
     string Name,
     string Description,
     decimal OriginalPrice,

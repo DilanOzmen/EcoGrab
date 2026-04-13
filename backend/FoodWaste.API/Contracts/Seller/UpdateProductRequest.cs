@@ -1,6 +1,7 @@
 namespace FoodWaste.API.Contracts.Seller;
 
 public sealed record UpdateProductRequest(
+    string Category,
     string Name,
     string Description,
     decimal OriginalPrice,

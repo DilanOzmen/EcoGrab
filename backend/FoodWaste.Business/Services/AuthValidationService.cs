@@ -10,7 +10,7 @@ public class AuthValidationService : IAuthValidationService
         "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{8,}$",
         RegexOptions.Compiled);
 
-    public IReadOnlyList<string> ValidateRegister(string fullName, string email, string password)
+    public IReadOnlyList<string> ValidateRegister(string fullName, string email, string password, string role)
     {
         var errors = new List<string>();
 
@@ -27,6 +27,11 @@ public class AuthValidationService : IAuthValidationService
         if (!IsStrongPassword(password))
         {
             errors.Add("Sifre en az 8 karakter, buyuk harf, kucuk harf, rakam ve ozel karakter icermelidir.");
+        }
+
+        if (!IsValidRegisterRole(role))
+        {
+            errors.Add("Rol sadece Customer veya Seller olabilir.");
         }
 
         return errors;
@@ -75,5 +80,17 @@ public class AuthValidationService : IAuthValidationService
         }
 
         return PasswordRegex.IsMatch(password);
+    }
+
+    private static bool IsValidRegisterRole(string role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            return false;
+        }
+
+        return role.Equals("Customer", StringComparison.OrdinalIgnoreCase)
+               || role.Equals("Seller", StringComparison.OrdinalIgnoreCase)
+               || role.Equals("Isletme", StringComparison.OrdinalIgnoreCase);
     }
 }

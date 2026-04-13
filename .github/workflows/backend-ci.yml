@@ -1,0 +1,33 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore API
+        run: dotnet restore backend/FoodWaste.API/FoodWaste.API.csproj
+
+      - name: Build API
+        run: dotnet build backend/FoodWaste.API/FoodWaste.API.csproj --configuration Release --no-restore
+
+      - name: Run Backend Tests
+        run: dotnet test backend/FoodWaste.Tests/FoodWaste.Tests.csproj --configuration Release

@@ -1,6 +1,7 @@
 namespace FoodWaste.Business.Models.Seller;
 
 public sealed record SellerProductUpdateModel(
+    string Category,
     string Name,
     string Description,
     decimal OriginalPrice,

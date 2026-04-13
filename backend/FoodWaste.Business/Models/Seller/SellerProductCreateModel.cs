@@ -2,6 +2,7 @@ namespace FoodWaste.Business.Models.Seller;
 
 public sealed record SellerProductCreateModel(
     int RestaurantId,
+    string Category,
     string Name,
     string Description,
     decimal OriginalPrice,
