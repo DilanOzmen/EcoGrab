@@ -13,6 +13,30 @@ namespace FoodWaste.API.Controllers;
 [Route("api/admin")]
 public class AdminController(IAdminService adminService) : ControllerBase
 {
+    [HttpGet("users")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
+    {
+        var users = await adminService.GetUsersAsync(cancellationToken);
+        return Ok(users);
+    }
+
+    [HttpGet("sellers")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSellers(CancellationToken cancellationToken)
+    {
+        var sellers = await adminService.GetSellersAsync(cancellationToken);
+        return Ok(sellers);
+    }
+
+    [HttpGet("products")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProducts(CancellationToken cancellationToken)
+    {
+        var products = await adminService.GetProductsAsync(cancellationToken);
+        return Ok(products);
+    }
+
     [HttpGet("sellers/pending")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPendingSellers(CancellationToken cancellationToken)
@@ -55,6 +79,18 @@ public class AdminController(IAdminService adminService) : ControllerBase
         return updated
             ? NoContent()
             : NotFound(new ApiErrorResponse("Urun bulunamadi."));
+    }
+
+    [HttpDelete("products/{productId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoveProduct(int productId, CancellationToken cancellationToken)
+    {
+        var adminUserId = TryGetAdminUserId();
+        var removed = await adminService.RemoveProductAsync(productId, adminUserId, cancellationToken);
+        return removed
+            ? NoContent()
+            : NotFound(new ApiErrorResponse("Urun silinemedi veya acik siparis oldugu icin kaldirilamadi."));
     }
 
     [HttpGet("dashboard")]

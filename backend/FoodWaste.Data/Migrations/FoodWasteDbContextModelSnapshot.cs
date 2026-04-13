@@ -72,6 +72,56 @@ namespace FoodWaste.Data.Migrations
                     b.ToTable("AdminActionLogs");
                 });
 
+            modelBuilder.Entity("FoodWaste.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "IsRead", "CreatedAt");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("FoodWaste.Entities.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -501,6 +551,17 @@ namespace FoodWaste.Data.Migrations
                     b.Navigation("AdminUser");
                 });
 
+            modelBuilder.Entity("FoodWaste.Entities.Notification", b =>
+                {
+                    b.HasOne("FoodWaste.Entities.User", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FoodWaste.Entities.Order", b =>
                 {
                     b.HasOne("FoodWaste.Entities.User", "User")
@@ -594,6 +655,8 @@ namespace FoodWaste.Data.Migrations
             modelBuilder.Entity("FoodWaste.Entities.User", b =>
                 {
                     b.Navigation("AdminActionLogs");
+
+                    b.Navigation("Notifications");
 
                     b.Navigation("Orders");
 

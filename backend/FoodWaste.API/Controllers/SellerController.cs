@@ -189,6 +189,37 @@ public class SellerController(ISellerService sellerService) : ControllerBase
         return Ok(orders);
     }
 
+    [HttpGet("orders")]
+    [ProducesResponseType(typeof(IReadOnlyList<SellerActiveOrderDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetOrders([FromQuery] bool onlyActive = false, CancellationToken cancellationToken = default)
+    {
+        if (!TryGetUserId(out var sellerUserId))
+        {
+            return Unauthorized();
+        }
+
+        var orders = await sellerService.GetOrdersAsync(sellerUserId, onlyActive, cancellationToken);
+        return Ok(orders);
+    }
+
+    [HttpGet("orders/{orderId:int}")]
+    [ProducesResponseType(typeof(SellerActiveOrderDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetOrderDetail(int orderId, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var sellerUserId))
+        {
+            return Unauthorized();
+        }
+
+        var order = await sellerService.GetOrderDetailAsync(sellerUserId, orderId, cancellationToken);
+        return order is null
+            ? NotFound(new ApiErrorResponse("Siparis bulunamadi."))
+            : Ok(order);
+    }
+
     [HttpPut("orders/{orderId:int}/status")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

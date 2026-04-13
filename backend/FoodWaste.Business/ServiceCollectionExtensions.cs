@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISellerService, SellerService>();
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IProductStatusService, ProductStatusService>();
         services.AddScoped<IReservationMaintenanceService, ReservationMaintenanceService>();
         return services;

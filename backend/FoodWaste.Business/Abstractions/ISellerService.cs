@@ -11,6 +11,8 @@ public interface ISellerService
     Task<SellerProductImageDto?> AddProductImageAsync(int sellerUserId, int productId, string imageUrl, string storageKey, bool isPrimary, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<SellerProductImageDto>> GetProductImagesAsync(int sellerUserId, int productId, CancellationToken cancellationToken = default);
     Task<bool> DeleteProductImageAsync(int sellerUserId, int productId, int imageId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SellerActiveOrderDto>> GetOrdersAsync(int sellerUserId, bool onlyActive, CancellationToken cancellationToken = default);
+    Task<SellerActiveOrderDto?> GetOrderDetailAsync(int sellerUserId, int orderId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<SellerActiveOrderDto>> GetActiveOrdersAsync(int sellerUserId, CancellationToken cancellationToken = default);
     Task<bool> UpdateOrderStatusAsync(int sellerUserId, int orderId, string status, CancellationToken cancellationToken = default);
 }

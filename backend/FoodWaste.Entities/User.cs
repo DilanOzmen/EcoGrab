@@ -19,4 +19,5 @@ public class User : BaseEntity
     public ICollection<Restaurant> OwnedRestaurants { get; set; } = new List<Restaurant>();
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     public ICollection<AdminActionLog> AdminActionLogs { get; set; } = new List<AdminActionLog>();
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }

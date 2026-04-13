@@ -15,6 +15,7 @@ public class FoodWasteDbContext(DbContextOptions<FoodWasteDbContext> options) : 
 	public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 	public DbSet<ProductImage> ProductImages => Set<ProductImage>();
 	public DbSet<AdminActionLog> AdminActionLogs => Set<AdminActionLog>();
+	public DbSet<Notification> Notifications => Set<Notification>();
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -171,6 +172,23 @@ public class FoodWasteDbContext(DbContextOptions<FoodWasteDbContext> options) : 
 				.WithMany(x => x.AdminActionLogs)
 				.HasForeignKey(x => x.AdminUserId)
 				.OnDelete(DeleteBehavior.Restrict);
+		});
+
+		modelBuilder.Entity<Notification>(entity =>
+		{
+			entity.Property(x => x.Type).HasMaxLength(50).IsRequired();
+			entity.Property(x => x.Title).HasMaxLength(120).IsRequired();
+			entity.Property(x => x.Message).HasMaxLength(1000).IsRequired();
+			entity.Property(x => x.UpdatedAt).HasColumnType("datetime2");
+			entity.Property(x => x.DeletedAt).HasColumnType("datetime2");
+			entity.Property(x => x.IsDeleted).HasDefaultValue(false);
+			entity.HasIndex(x => new { x.UserId, x.IsRead, x.CreatedAt });
+
+			entity
+				.HasOne(x => x.User)
+				.WithMany(x => x.Notifications)
+				.HasForeignKey(x => x.UserId)
+				.OnDelete(DeleteBehavior.Cascade);
 		});
 
 		ApplySoftDeleteQueryFilters(modelBuilder);

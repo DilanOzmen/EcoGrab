@@ -79,6 +79,22 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
             return null;
         }
 
+        if (!model.IsActive)
+        {
+            var hasOpenOrders = await dbContext.OrderItems
+                .AnyAsync(x => x.ProductId == productId
+                               && !x.IsDeleted
+                               && x.Order != null
+                               && !x.Order.IsDeleted
+                               && (x.Order.Status == OrderStatus.Pending || x.Order.Status == OrderStatus.Confirmed),
+                    cancellationToken);
+
+            if (hasOpenOrders)
+            {
+                return null;
+            }
+        }
+
         product.Category = model.Category.Trim();
         product.Name = model.Name.Trim();
         product.Description = model.Description.Trim();
@@ -115,12 +131,65 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
             return false;
         }
 
+        var hasOpenOrders = await dbContext.OrderItems
+            .AnyAsync(x => x.ProductId == productId
+                           && !x.IsDeleted
+                           && x.Order != null
+                           && !x.Order.IsDeleted
+                           && (x.Order.Status == OrderStatus.Pending || x.Order.Status == OrderStatus.Confirmed),
+                cancellationToken);
+
+        if (hasOpenOrders)
+        {
+            return false;
+        }
+
         product.IsDeleted = true;
         product.DeletedAt = DateTime.UtcNow;
         product.UpdatedAt = DateTime.UtcNow;
         product.IsActive = false;
         await dbContext.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task<IReadOnlyList<SellerActiveOrderDto>> GetOrdersAsync(int sellerUserId, bool onlyActive, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Orders
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted
+                        && x.Items.Any(i => i.Product != null
+                                            && !i.Product.IsDeleted
+                                            && i.Product.Restaurant != null
+                                            && !i.Product.Restaurant.IsDeleted
+                                            && i.Product.Restaurant.OwnerUserId == sellerUserId));
+
+        if (onlyActive)
+        {
+            query = query.Where(x => x.Status == OrderStatus.Pending || x.Status == OrderStatus.Confirmed);
+        }
+
+        return await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => new SellerActiveOrderDto(
+                x.Id,
+                x.UserId,
+                x.User != null ? x.User.FullName : "Unknown Customer",
+                x.CreatedAt,
+                x.Status.ToString(),
+                x.TotalAmount,
+                x.Items
+                    .Where(i => i.Product != null
+                                && !i.Product.IsDeleted
+                                && i.Product.Restaurant != null
+                                && !i.Product.Restaurant.IsDeleted
+                                && i.Product.Restaurant.OwnerUserId == sellerUserId)
+                    .Select(i => new SellerActiveOrderItemDto(
+                        i.ProductId,
+                        i.Product != null ? i.Product.Name : "Unknown Product",
+                        i.Quantity,
+                        i.UnitPrice))
+                    .ToList()))
+                    .ToListAsync(cancellationToken);
     }
 
     public async Task<SellerProductImageDto?> AddProductImageAsync(int sellerUserId, int productId, string imageUrl, string storageKey, bool isPrimary, CancellationToken cancellationToken = default)
@@ -172,6 +241,39 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
             .ThenBy(x => x.Id)
             .Select(x => new SellerProductImageDto(x.Id, x.ProductId, x.ImageUrl, x.StorageKey, x.IsPrimary))
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<SellerActiveOrderDto?> GetOrderDetailAsync(int sellerUserId, int orderId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Orders
+            .AsNoTracking()
+            .Where(x => x.Id == orderId
+                        && !x.IsDeleted
+                        && x.Items.Any(i => i.Product != null
+                                            && !i.Product.IsDeleted
+                                            && i.Product.Restaurant != null
+                                            && !i.Product.Restaurant.IsDeleted
+                                            && i.Product.Restaurant.OwnerUserId == sellerUserId))
+            .Select(x => new SellerActiveOrderDto(
+                x.Id,
+                x.UserId,
+                x.User != null ? x.User.FullName : "Unknown Customer",
+                x.CreatedAt,
+                x.Status.ToString(),
+                x.TotalAmount,
+                x.Items
+                    .Where(i => i.Product != null
+                                && !i.Product.IsDeleted
+                                && i.Product.Restaurant != null
+                                && !i.Product.Restaurant.IsDeleted
+                                && i.Product.Restaurant.OwnerUserId == sellerUserId)
+                    .Select(i => new SellerActiveOrderItemDto(
+                        i.ProductId,
+                        i.Product != null ? i.Product.Name : "Unknown Product",
+                        i.Quantity,
+                        i.UnitPrice))
+                    .ToList()))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<bool> DeleteProductImageAsync(int sellerUserId, int productId, int imageId, CancellationToken cancellationToken = default)

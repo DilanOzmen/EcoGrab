@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FoodWaste.Entities")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+397aa27d526f491286271f39d874c54d30119b6b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9c5d2c15ca469b136431a8577b44e0781cdb274f")]
 [assembly: System.Reflection.AssemblyProductAttribute("FoodWaste.Entities")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FoodWaste.Entities")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
