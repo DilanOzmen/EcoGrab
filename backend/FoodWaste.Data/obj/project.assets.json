@@ -2795,8 +2795,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj": {
-              "projectPath": "C:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj"
+            "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj": {
+              "projectPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj"
             }
           }
         }

@@ -9,3 +9,4 @@ C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\o
 C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\refint\FoodWaste.Entities.dll
 C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.pdb
 C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\ref\FoodWaste.Entities.dll
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.sourcelink.json

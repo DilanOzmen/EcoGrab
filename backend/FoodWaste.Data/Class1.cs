@@ -17,6 +17,8 @@ public class FoodWasteDbContext(DbContextOptions<FoodWasteDbContext> options) : 
 		{
 			entity.Property(x => x.FullName).HasMaxLength(120).IsRequired();
 			entity.Property(x => x.Email).HasMaxLength(150).IsRequired();
+			entity.Property(x => x.Phone).HasMaxLength(20);
+			entity.Property(x => x.Role).HasConversion<string>().HasMaxLength(20).IsRequired();
 			entity.HasIndex(x => x.Email).IsUnique();
 		});
 
@@ -24,6 +26,12 @@ public class FoodWasteDbContext(DbContextOptions<FoodWasteDbContext> options) : 
 		{
 			entity.Property(x => x.Name).HasMaxLength(120).IsRequired();
 			entity.Property(x => x.City).HasMaxLength(80).IsRequired();
+
+			entity
+				.HasOne(x => x.OwnerUser)
+				.WithMany(x => x.OwnedRestaurants)
+				.HasForeignKey(x => x.OwnerUserId)
+				.OnDelete(DeleteBehavior.Restrict);
 		});
 
 		modelBuilder.Entity<Product>(entity =>

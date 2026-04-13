@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <ProjectReference Include="..\FoodWaste.Data\FoodWaste.Data.csproj" />
     <ProjectReference Include="..\FoodWaste.Entities\FoodWaste.Entities.csproj" />
   </ItemGroup>

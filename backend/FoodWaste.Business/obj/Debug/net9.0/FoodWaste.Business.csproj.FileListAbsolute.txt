@@ -15,3 +15,4 @@ C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\o
 C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\refint\FoodWaste.Business.dll
 C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\FoodWaste.Business.pdb
 C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\ref\FoodWaste.Business.dll
+C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Business\obj\Debug\net9.0\FoodWaste.Business.sourcelink.json
