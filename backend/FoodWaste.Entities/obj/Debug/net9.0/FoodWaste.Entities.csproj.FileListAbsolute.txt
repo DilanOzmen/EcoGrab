@@ -10,3 +10,15 @@ C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\o
 C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.pdb
 C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\ref\FoodWaste.Entities.dll
 C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.sourcelink.json
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\bin\Debug\net9.0\FoodWaste.Entities.deps.json
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\bin\Debug\net9.0\FoodWaste.Entities.dll
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\bin\Debug\net9.0\FoodWaste.Entities.pdb
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.AssemblyInfoInputs.cache
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.AssemblyInfo.cs
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.csproj.CoreCompileInputs.cache
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.sourcelink.json
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.dll
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\refint\FoodWaste.Entities.dll
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\FoodWaste.Entities.pdb
+C:\Users\Asus\food_waste_platform\backend\FoodWaste.Entities\obj\Debug\net9.0\ref\FoodWaste.Entities.dll

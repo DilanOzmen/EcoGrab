@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.API\\FoodWaste.API.csproj": {}
+    "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.API\\FoodWaste.API.csproj": {}
   },
   "projects": {
-    "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.API\\FoodWaste.API.csproj": {
+    "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.API\\FoodWaste.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.API\\FoodWaste.API.csproj",
+        "projectUniqueName": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.API\\FoodWaste.API.csproj",
         "projectName": "FoodWaste.API",
-        "projectPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.API\\FoodWaste.API.csproj",
-        "packagesPath": "C:\\Users\\yagmu\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.API\\obj\\",
+        "projectPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.API\\FoodWaste.API.csproj",
+        "packagesPath": "C:\\Users\\Asus\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\yagmu\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Asus\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -33,11 +33,11 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Business\\FoodWaste.Business.csproj": {
-                "projectPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Business\\FoodWaste.Business.csproj"
+              "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Business\\FoodWaste.Business.csproj": {
+                "projectPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Business\\FoodWaste.Business.csproj"
               },
-              "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj": {
-                "projectPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj"
+              "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj": {
+                "projectPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj"
               }
             }
           }
@@ -52,7 +52,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net9.0": {
@@ -88,6 +88,24 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[9.0.14, 9.0.14]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
@@ -96,24 +114,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.310/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Business\\FoodWaste.Business.csproj": {
+    "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Business\\FoodWaste.Business.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Business\\FoodWaste.Business.csproj",
+        "projectUniqueName": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Business\\FoodWaste.Business.csproj",
         "projectName": "FoodWaste.Business",
-        "projectPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Business\\FoodWaste.Business.csproj",
-        "packagesPath": "C:\\Users\\yagmu\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Business\\obj\\",
+        "projectPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Business\\FoodWaste.Business.csproj",
+        "packagesPath": "C:\\Users\\Asus\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Business\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\yagmu\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Asus\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -129,11 +147,11 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj": {
-                "projectPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj"
+              "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj": {
+                "projectPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj"
               },
-              "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj": {
-                "projectPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj"
+              "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj": {
+                "projectPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj"
               }
             }
           }
@@ -148,7 +166,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net9.0": {
@@ -170,29 +188,43 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.310/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj": {
+    "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj",
+        "projectUniqueName": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj",
         "projectName": "FoodWaste.Data",
-        "projectPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj",
-        "packagesPath": "C:\\Users\\yagmu\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Data\\obj\\",
+        "projectPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Data\\FoodWaste.Data.csproj",
+        "packagesPath": "C:\\Users\\Asus\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Data\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\yagmu\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Asus\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -208,8 +240,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj": {
-                "projectPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj"
+              "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj": {
+                "projectPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj"
               }
             }
           }
@@ -224,7 +256,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net9.0": {
@@ -250,29 +282,43 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.310/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj": {
+    "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj",
+        "projectUniqueName": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj",
         "projectName": "FoodWaste.Entities",
-        "projectPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj",
-        "packagesPath": "C:\\Users\\yagmu\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\obj\\",
+        "projectPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj",
+        "packagesPath": "C:\\Users\\Asus\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Entities\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\yagmu\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Asus\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -300,7 +346,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net9.0": {
@@ -316,12 +362,26 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.310/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

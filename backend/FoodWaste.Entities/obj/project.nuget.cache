@@ -1,8 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "7o3wMdOaOfE=",
+  "dgSpecHash": "UvbKObN9050=",
   "success": true,
-  "projectFilePath": "c:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "C:\\Users\\Asus\\food_waste_platform\\backend\\FoodWaste.Entities\\FoodWaste.Entities.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Asus\\.nuget\\packages\\microsoft.netcore.app.ref\\9.0.14\\microsoft.netcore.app.ref.9.0.14.nupkg.sha512",
+    "C:\\Users\\Asus\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\9.0.14\\microsoft.windowsdesktop.app.ref.9.0.14.nupkg.sha512",
+    "C:\\Users\\Asus\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\9.0.14\\microsoft.aspnetcore.app.ref.9.0.14.nupkg.sha512"
+  ],
   "logs": []
 }
