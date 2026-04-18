@@ -60,6 +60,23 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
     }
 
     [AllowAnonymous]
+    [HttpGet("products/{productId:int}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProductDetail(int productId, CancellationToken cancellationToken)
+    {
+        if (productId <= 0)
+        {
+            return BadRequest(new ApiErrorResponse("Gecersiz urun."));
+        }
+
+        var product = await customerService.GetProductDetailAsync(productId, cancellationToken);
+        return product is null
+            ? NotFound(new ApiErrorResponse("Urun bulunamadi."))
+            : Ok(product);
+    }
+
+    [AllowAnonymous]
     [HttpGet("restaurants/{restaurantId:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

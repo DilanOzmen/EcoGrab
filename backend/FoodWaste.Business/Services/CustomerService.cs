@@ -154,6 +154,38 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<CustomerProductDto?> GetProductDetailAsync(int productId, CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+
+        var product = await dbContext.Products
+            .AsNoTracking()
+            .Include(x => x.Restaurant)
+            .Where(x => x.Id == productId
+                        && !x.IsDeleted
+                        && x.IsActive
+                        && x.Stock > 0
+                        && x.ExpiryDate > now
+                        && x.DiscountedPrice < x.OriginalPrice
+                        && x.Restaurant != null
+                        && !x.Restaurant.IsDeleted)
+            .Select(x => new CustomerProductDto(
+                x.Id,
+                x.RestaurantId,
+                x.Restaurant != null ? x.Restaurant.Name : "Unknown Restaurant",
+                x.Category,
+                x.Name,
+                x.Description,
+                x.OriginalPrice,
+                x.DiscountedPrice,
+                x.OriginalPrice <= 0 ? 0 : Math.Round((x.OriginalPrice - x.DiscountedPrice) * 100 / x.OriginalPrice, 2),
+                x.Stock,
+                x.ExpiryDate))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return product;
+    }
+
     public async Task<RestaurantDetailDto?> GetRestaurantDetailAsync(int restaurantId, CancellationToken cancellationToken = default)
     {
         return await dbContext.Restaurants

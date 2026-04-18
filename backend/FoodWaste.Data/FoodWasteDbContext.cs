@@ -1,4 +1,4 @@
-﻿using FoodWaste.Entities;
+using FoodWaste.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Linq.Expressions;

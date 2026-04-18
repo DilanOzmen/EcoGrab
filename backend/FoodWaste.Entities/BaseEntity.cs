@@ -1,4 +1,4 @@
-﻿namespace FoodWaste.Entities;
+namespace FoodWaste.Entities;
 
 public abstract class BaseEntity
 {

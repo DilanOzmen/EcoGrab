@@ -15,25 +15,50 @@ public class AdminController(IAdminService adminService) : ControllerBase
 {
     [HttpGet("users")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetUsers(
+        [FromQuery] string? search,
+        [FromQuery] bool? isActive,
+        [FromQuery] string? role,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDir,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
-        var users = await adminService.GetUsersAsync(cancellationToken);
+        var users = await adminService.GetUsersAsync(search, isActive, role, sortBy, sortDir, page, pageSize, cancellationToken);
         return Ok(users);
     }
 
     [HttpGet("sellers")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetSellers(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetSellers(
+        [FromQuery] string? search,
+        [FromQuery] bool? isActive,
+        [FromQuery] bool? isApproved,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDir,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
-        var sellers = await adminService.GetSellersAsync(cancellationToken);
+        var sellers = await adminService.GetSellersAsync(search, isActive, isApproved, sortBy, sortDir, page, pageSize, cancellationToken);
         return Ok(sellers);
     }
 
     [HttpGet("products")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetProducts(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetProducts(
+        [FromQuery] string? search,
+        [FromQuery] int? restaurantId,
+        [FromQuery] string? category,
+        [FromQuery] bool? isActive,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDir,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
-        var products = await adminService.GetProductsAsync(cancellationToken);
+        var products = await adminService.GetProductsAsync(search, restaurantId, category, isActive, sortBy, sortDir, page, pageSize, cancellationToken);
         return Ok(products);
     }
 

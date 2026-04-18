@@ -8,48 +8,118 @@ namespace FoodWaste.Business.Services;
 
 public class AdminService(FoodWasteDbContext dbContext, INotificationService notificationService) : IAdminService
 {
-    public async Task<IReadOnlyList<AdminUserModerationDto>> GetUsersAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedResultDto<AdminUserModerationDto>> GetUsersAsync(
+        string? search,
+        bool? isActive,
+        string? role,
+        string? sortBy,
+        string? sortDir,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
-        return await dbContext.Users
+        var query = dbContext.Users
             .AsNoTracking()
-            .Where(x => !x.IsDeleted)
-            .OrderByDescending(x => x.CreatedAt)
-            .Select(x => new AdminUserModerationDto(
-                x.Id,
-                x.FullName,
-                x.Email,
-                x.Phone,
-                x.Role.ToString(),
-                x.IsActive,
-                x.IsApproved,
-                x.CreatedAt))
-            .ToListAsync(cancellationToken);
+            .Where(x => !x.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var value = search.Trim();
+            query = query.Where(x => x.FullName.Contains(value) || x.Email.Contains(value) || x.Phone.Contains(value));
+        }
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(x => x.IsActive == isActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(role) && Enum.TryParse<UserRole>(role, true, out var parsedRole))
+        {
+            query = query.Where(x => x.Role == parsedRole);
+        }
+
+        query = ApplyUserSorting(query, sortBy, sortDir);
+        return await BuildUserPagedResultAsync(query, page, pageSize, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<AdminUserModerationDto>> GetSellersAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedResultDto<AdminUserModerationDto>> GetSellersAsync(
+        string? search,
+        bool? isActive,
+        bool? isApproved,
+        string? sortBy,
+        string? sortDir,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
-        return await dbContext.Users
+        var query = dbContext.Users
             .AsNoTracking()
-            .Where(x => !x.IsDeleted && x.Role == UserRole.Seller)
-            .OrderByDescending(x => x.CreatedAt)
-            .Select(x => new AdminUserModerationDto(
-                x.Id,
-                x.FullName,
-                x.Email,
-                x.Phone,
-                x.Role.ToString(),
-                x.IsActive,
-                x.IsApproved,
-                x.CreatedAt))
-            .ToListAsync(cancellationToken);
+            .Where(x => !x.IsDeleted && x.Role == UserRole.Seller);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var value = search.Trim();
+            query = query.Where(x => x.FullName.Contains(value) || x.Email.Contains(value) || x.Phone.Contains(value));
+        }
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(x => x.IsActive == isActive.Value);
+        }
+
+        if (isApproved.HasValue)
+        {
+            query = query.Where(x => x.IsApproved == isApproved.Value);
+        }
+
+        query = ApplyUserSorting(query, sortBy, sortDir);
+        return await BuildUserPagedResultAsync(query, page, pageSize, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<AdminProductModerationDto>> GetProductsAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedResultDto<AdminProductModerationDto>> GetProductsAsync(
+        string? search,
+        int? restaurantId,
+        string? category,
+        bool? isActive,
+        string? sortBy,
+        string? sortDir,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
-        return await dbContext.Products
+        var query = dbContext.Products
             .AsNoTracking()
-            .Where(x => !x.IsDeleted && x.Restaurant != null && !x.Restaurant.IsDeleted)
-            .OrderByDescending(x => x.CreatedAt)
+            .Where(x => !x.IsDeleted && x.Restaurant != null && !x.Restaurant.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var value = search.Trim();
+            query = query.Where(x => x.Name.Contains(value) || x.Description.Contains(value));
+        }
+
+        if (restaurantId.HasValue)
+        {
+            query = query.Where(x => x.RestaurantId == restaurantId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            var value = category.Trim();
+            query = query.Where(x => x.Category == value);
+        }
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(x => x.IsActive == isActive.Value);
+        }
+
+        query = ApplyProductSorting(query, sortBy, sortDir);
+
+        var (safePage, safePageSize) = NormalizePaging(page, pageSize);
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((safePage - 1) * safePageSize)
+            .Take(safePageSize)
             .Select(x => new AdminProductModerationDto(
                 x.Id,
                 x.RestaurantId,
@@ -63,6 +133,8 @@ public class AdminService(FoodWasteDbContext dbContext, INotificationService not
                 x.ExpiryDate,
                 x.CreatedAt))
             .ToListAsync(cancellationToken);
+
+        return new PagedResultDto<AdminProductModerationDto>(items, safePage, safePageSize, totalCount);
     }
 
     public async Task<IReadOnlyList<PendingSellerDto>> GetPendingSellersAsync(CancellationToken cancellationToken = default)
@@ -265,5 +337,66 @@ public class AdminService(FoodWasteDbContext dbContext, INotificationService not
             .SumAsync(x => (decimal?)x.TotalAmount, cancellationToken) ?? 0;
 
         return new AdminDashboardDto(totalUsers, activeUsers, activeSellers, totalOrders, activeProducts, completedSalesTotal);
+    }
+
+    private static (int Page, int PageSize) NormalizePaging(int page, int pageSize)
+    {
+        var safePage = page < 1 ? 1 : page;
+        var safePageSize = pageSize switch
+        {
+            < 1 => 20,
+            > 100 => 100,
+            _ => pageSize
+        };
+
+        return (safePage, safePageSize);
+    }
+
+    private static IQueryable<User> ApplyUserSorting(IQueryable<User> query, string? sortBy, string? sortDir)
+    {
+        var isDesc = !string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase);
+        return (sortBy ?? "createdAt").ToLowerInvariant() switch
+        {
+            "fullname" => isDesc ? query.OrderByDescending(x => x.FullName) : query.OrderBy(x => x.FullName),
+            "email" => isDesc ? query.OrderByDescending(x => x.Email) : query.OrderBy(x => x.Email),
+            _ => isDesc ? query.OrderByDescending(x => x.CreatedAt) : query.OrderBy(x => x.CreatedAt)
+        };
+    }
+
+    private static IQueryable<Product> ApplyProductSorting(IQueryable<Product> query, string? sortBy, string? sortDir)
+    {
+        var isDesc = !string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase);
+        return (sortBy ?? "createdAt").ToLowerInvariant() switch
+        {
+            "name" => isDesc ? query.OrderByDescending(x => x.Name) : query.OrderBy(x => x.Name),
+            "discountedprice" => isDesc ? query.OrderByDescending(x => x.DiscountedPrice) : query.OrderBy(x => x.DiscountedPrice),
+            "stock" => isDesc ? query.OrderByDescending(x => x.Stock) : query.OrderBy(x => x.Stock),
+            _ => isDesc ? query.OrderByDescending(x => x.CreatedAt) : query.OrderBy(x => x.CreatedAt)
+        };
+    }
+
+    private static async Task<PagedResultDto<AdminUserModerationDto>> BuildUserPagedResultAsync(
+        IQueryable<User> query,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var (safePage, safePageSize) = NormalizePaging(page, pageSize);
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((safePage - 1) * safePageSize)
+            .Take(safePageSize)
+            .Select(x => new AdminUserModerationDto(
+                x.Id,
+                x.FullName,
+                x.Email,
+                x.Phone,
+                x.Role.ToString(),
+                x.IsActive,
+                x.IsApproved,
+                x.CreatedAt))
+            .ToListAsync(cancellationToken);
+
+        return new PagedResultDto<AdminUserModerationDto>(items, safePage, safePageSize, totalCount);
     }
 }

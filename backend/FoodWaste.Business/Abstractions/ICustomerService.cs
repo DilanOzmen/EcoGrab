@@ -6,6 +6,7 @@ public interface ICustomerService
 {
     Task<IReadOnlyList<NearbyRestaurantDto>> GetRestaurantsAsync(string? city, string? search, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CustomerProductDto>> GetProductsAsync(CustomerProductFilterModel filter, CancellationToken cancellationToken = default);
+    Task<CustomerProductDto?> GetProductDetailAsync(int productId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CustomerProductDto>> GetProductsByRestaurantAsync(int restaurantId, CancellationToken cancellationToken = default);
     Task<RestaurantDetailDto?> GetRestaurantDetailAsync(int restaurantId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<NearbyRestaurantDto>> GetNearbyRestaurantsAsync(double latitude, double longitude, double radiusKm, CancellationToken cancellationToken = default);
