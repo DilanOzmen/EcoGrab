@@ -1,0 +1,14 @@
+# Backend build outputs
+backend/**/bin/
+backend/**/obj/
+
+# .NET test and coverage artifacts
+backend/**/TestResults/
+backend/**/coverage/
+backend/**/.coverage
+backend/**/.coverage.*
+
+# IDE artifacts
+.vs/
+*.user
+*.suo
