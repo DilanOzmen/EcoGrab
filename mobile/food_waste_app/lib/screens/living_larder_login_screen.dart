@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:food_waste_app/data/services/api_client.dart';
+import 'package:food_waste_app/core/app_state.dart';
+import 'rescue_home_screen.dart';
+import 'seller_home_screen.dart';
 
 class LivingLarderLoginScreen extends StatefulWidget {
   const LivingLarderLoginScreen({super.key});
@@ -23,6 +27,118 @@ class _LivingLarderLoginScreenState extends State<LivingLarderLoginScreen> {
   static const _surfaceContainerLowest = Color(0xFFFFFFFF);
 
   bool _isCustomer = true;
+  bool _isRegisterMode = false;
+  bool _isLoading = false;
+  String _errorMessage = '';
+  final _fullNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _apiClient = ApiClient();
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _toggleAuthMode() {
+    setState(() {
+      _isRegisterMode = !_isRegisterMode;
+      _errorMessage = '';
+    });
+  }
+
+  Future<void> _login() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = 'E-posta ve sifre bos birakilamaz.');
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+    try {
+      final result = await _apiClient.login(email, password);
+      AppState.setUser(result);
+      if (!mounted) return;
+      if (AppState.isSeller) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const SellerHomeScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const RescueHomeScreen()),
+        );
+      }
+    } on ApiException catch (e) {
+      setState(() => _errorMessage = e.message);
+    } catch (_) {
+      setState(() => _errorMessage = 'Baglanti hatasi. Sunucuyu kontrol edin.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _register() async {
+    final fullName = _fullNameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (fullName.isEmpty || phone.isEmpty || email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = 'Lutfen tum alanlari doldurun.');
+      return;
+    }
+    if (password != confirmPassword) {
+      setState(() => _errorMessage = 'Sifreler eslesmiyor.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final result = await _apiClient.register(
+        fullName: fullName,
+        email: email,
+        password: password,
+        phone: phone,
+        role: _isCustomer ? 'Customer' : 'Seller',
+      );
+      AppState.setUser(result);
+      if (!mounted) return;
+      if (AppState.isSeller) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const SellerHomeScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const RescueHomeScreen()),
+        );
+      }
+    } on ApiException catch (e) {
+      setState(() => _errorMessage = e.message);
+    } catch (_) {
+      setState(() => _errorMessage = 'Baglanti hatasi. Sunucuyu kontrol edin.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -207,10 +323,28 @@ class _LivingLarderLoginScreenState extends State<LivingLarderLoginScreen> {
                         const SizedBox(height: 30),
                         _roleToggle(),
                         const SizedBox(height: 30),
+                        if (_isRegisterMode) ...[
+                          _label('Ad Soyad'),
+                          const SizedBox(height: 10),
+                          _inputField(
+                            hint: 'Ad Soyad',
+                            controller: _fullNameController,
+                          ),
+                          const SizedBox(height: 20),
+                          _label('Telefon'),
+                          const SizedBox(height: 10),
+                          _inputField(
+                            hint: '05XXXXXXXXX',
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
                         _label('E-posta Adresi'),
                         const SizedBox(height: 10),
                         _inputField(
                           hint: 'ornek@email.com',
+                          controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                         ),
                         const SizedBox(height: 20),
@@ -219,7 +353,13 @@ class _LivingLarderLoginScreenState extends State<LivingLarderLoginScreen> {
                           children: [
                             _label('Sifre'),
                             TextButton(
-                              onPressed: () {},
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                      if (!_isRegisterMode) {
+                                        _toggleAuthMode();
+                                      }
+                                    },
                               style: TextButton.styleFrom(
                                 padding: EdgeInsets.zero,
                                 minimumSize: Size.zero,
@@ -237,7 +377,67 @@ class _LivingLarderLoginScreenState extends State<LivingLarderLoginScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        _inputField(hint: '••••••••', obscureText: true),
+                        _inputField(
+                          hint: '••••••••',
+                          controller: _passwordController,
+                          obscureText: true,
+                        ),
+                        if (_isRegisterMode) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Sifre: en az 8 karakter, buyuk harf, kucuk harf, rakam ve ozel karakter icermeli.',
+                            style: GoogleFonts.manrope(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: _onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                        if (_isRegisterMode) ...[
+                          const SizedBox(height: 20),
+                          _label('Sifre Tekrar'),
+                          const SizedBox(height: 10),
+                          _inputField(
+                            hint: '••••••••',
+                            controller: _confirmPasswordController,
+                            obscureText: true,
+                          ),
+                        ],
+                        if (_errorMessage.isNotEmpty) ...
+                          [
+                            const SizedBox(height: 14),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFDAD6),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline,
+                                    size: 16,
+                                    color: Color(0xFFBA1A1A),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _errorMessage,
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF93000A),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         const SizedBox(height: 24),
                         _loginButton(),
                         const SizedBox(height: 34),
@@ -281,9 +481,15 @@ class _LivingLarderLoginScreenState extends State<LivingLarderLoginScreen> {
                                 color: _onSurfaceVariant,
                               ),
                               children: [
-                                const TextSpan(text: 'Hesabiniz yok mu? '),
                                 TextSpan(
-                                  text: 'Hemen Kaydolun',
+                                  text: _isRegisterMode
+                                      ? 'Zaten hesabiniz var mi? '
+                                      : 'Hesabiniz yok mu? ',
+                                ),
+                                TextSpan(
+                                  text: _isRegisterMode
+                                      ? 'Giris Yapin'
+                                      : 'Hemen Kaydolun',
                                   style: GoogleFonts.manrope(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
@@ -291,6 +497,22 @@ class _LivingLarderLoginScreenState extends State<LivingLarderLoginScreen> {
                                   ),
                                 ),
                               ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Align(
+                          child: TextButton(
+                            onPressed: _isLoading ? null : _toggleAuthMode,
+                            child: Text(
+                              _isRegisterMode
+                                  ? 'Giris ekranina don'
+                                  : 'Uye olma ekranina gec',
+                              style: GoogleFonts.manrope(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: _secondary,
+                              ),
                             ),
                           ),
                         ),
@@ -423,10 +645,12 @@ class _LivingLarderLoginScreenState extends State<LivingLarderLoginScreen> {
 
   Widget _inputField({
     required String hint,
+    TextEditingController? controller,
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
   }) {
     return TextField(
+      controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
       style: GoogleFonts.manrope(
@@ -479,7 +703,7 @@ class _LivingLarderLoginScreenState extends State<LivingLarderLoginScreen> {
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () {},
+          onPressed: _isLoading ? null : (_isRegisterMode ? _register : _login),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
@@ -488,14 +712,23 @@ class _LivingLarderLoginScreenState extends State<LivingLarderLoginScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          child: Text(
-            'Giris Yap',
-            style: GoogleFonts.manrope(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
+          child: _isLoading
+              ? const SizedBox(
+                  height: 22,
+                  width: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(
+                  _isRegisterMode ? 'Uye Ol' : 'Giris Yap',
+                  style: GoogleFonts.manrope(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
         ),
       ),
     );
@@ -528,7 +761,7 @@ class _LivingLarderLoginScreenState extends State<LivingLarderLoginScreen> {
   Widget _socialButton({required String label, required Widget leading}) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () {},
+      onTap: _isLoading ? null : _toggleAuthMode,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         decoration: BoxDecoration(
