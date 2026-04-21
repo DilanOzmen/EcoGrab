@@ -179,6 +179,41 @@ class ApiClient {
     }
   }
 
+  // -- Seller Products
+
+  Future<int> createProduct({
+    required String name,
+    required String description,
+    required double originalPrice,
+    required double discountedPrice,
+    required String category,
+    required int stock,
+    required String collectionFrom,
+    required String collectionUntil,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/seller/products'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'Name': name,
+        'Description': description,
+        'OriginalPrice': originalPrice,
+        'DiscountedPrice': discountedPrice,
+        'Category': category,
+        'Stock': stock,
+        'CollectionWindowFrom': collectionFrom,
+        'CollectionWindowUntil': collectionUntil,
+      }),
+    );
+
+    if (response.statusCode != 201) {
+      throw ApiException(_extractErrorMessage(response.body, 'Urun olusturma basarisiz.'));
+    }
+
+    final responseJson = jsonDecode(response.body) as Map<String, dynamic>;
+    return responseJson['id'] ?? 0;
+  }
+
   // ── helpers ───────────────────────────────────────────────────────────────
 
   Map<String, dynamic>? _tryDecode(String body) {
