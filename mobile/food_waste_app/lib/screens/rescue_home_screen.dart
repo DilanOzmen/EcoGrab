@@ -1,29 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:food_waste_app/core/app_state.dart';
+import 'package:food_waste_app/data/models/customer_order.dart';
 import 'package:food_waste_app/data/models/product.dart';
 import 'package:food_waste_app/data/models/restaurant.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
-import 'map_view_screen.dart';
 import 'living_larder_login_screen.dart';
+import 'map_view_screen.dart';
+import 'order_tracking_screen.dart';
 import 'product_detail_screen.dart';
 import 'restaurant_detail_screen.dart';
 
 class RescueHomeScreen extends StatefulWidget {
   const RescueHomeScreen({super.key});
+
   @override
   State<RescueHomeScreen> createState() => _RescueHomeScreenState();
 }
 
 class _RescueHomeScreenState extends State<RescueHomeScreen> {
-  int _selectedIndex = 0; // Başlangıçta Home seçili
+  int _selectedIndex = 0;
   final ApiClient _apiClient = ApiClient();
 
   late Future<_HomeData> _homeFuture;
+  late Future<List<CustomerOrder>> _ordersFuture;
 
   @override
   void initState() {
     super.initState();
     _homeFuture = _loadHomeData();
+    _ordersFuture = _loadOrdersData();
   }
 
   Future<_HomeData> _loadHomeData() async {
@@ -38,10 +43,39 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
     );
   }
 
+  Future<List<CustomerOrder>> _loadOrdersData() async {
+    final results = await Future.wait([
+      _apiClient.getMyOrders(),
+      _apiClient.getMyReservations(),
+    ]);
+
+    final merged = <CustomerOrder>[
+      ...results[0],
+      ...results[1],
+    ];
+
+    final unique = <int, CustomerOrder>{};
+    for (final order in merged) {
+      unique[order.id] = order;
+    }
+
+    final list = unique.values.toList();
+    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return list;
+  }
+
   Future<void> _refreshHome() async {
     final future = _loadHomeData();
     setState(() {
       _homeFuture = future;
+    });
+    await future;
+  }
+
+  Future<void> _refreshOrders() async {
+    final future = _loadOrdersData();
+    setState(() {
+      _ordersFuture = future;
     });
     await future;
   }
@@ -205,6 +239,89 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
     );
   }
 
+  Widget _buildOrdersTab() {
+    return FutureBuilder<List<CustomerOrder>>(
+      future: _ordersFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    snapshot.error.toString().replaceAll('ApiException: ', ''),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: _refreshOrders,
+                    child: const Text('Tekrar Dene'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final orders = snapshot.data ?? [];
+        if (orders.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: _refreshOrders,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [
+                SizedBox(height: 220),
+                Center(child: Text('Henuz siparis veya rezervasyon bulunmuyor.')),
+              ],
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: _refreshOrders,
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            itemCount: orders.length,
+            itemBuilder: (context, index) {
+              final order = orders[index];
+              final itemNames = order.items.map((i) => i.productName).join(', ');
+              return Card(
+                child: ListTile(
+                  title: Text('#${order.id} - ${order.status}'),
+                  subtitle: Text(itemNames.isNotEmpty ? itemNames : 'Urun yok'),
+                  trailing: Text(
+                    '${order.totalAmount.toStringAsFixed(2)} TL',
+                    style: const TextStyle(
+                      color: Color(0xFF0F5238),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => OrderTrackingScreen(
+                          orderId: order.id,
+                          apiClient: _apiClient,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildBody() {
     switch (_selectedIndex) {
       case 0:
@@ -212,9 +329,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
       case 1:
         return const MapViewScreen();
       case 2:
-        return const Center(
-          child: Text('Orders sekmesi baglanacak.'),
-        );
+        return _buildOrdersTab();
       case 3:
         return Center(
           child: Column(
@@ -247,16 +362,19 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
+            if (index == 2) {
+              _ordersFuture = _loadOrdersData();
+            }
           });
         },
         type: BottomNavigationBarType.fixed,
         selectedItemColor: const Color(0xFF0F5238),
         unselectedItemColor: Colors.grey,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.map_rounded), label: "Map"),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), label: "Orders"),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "Profile"),
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.map_rounded), label: 'Map'),
+          BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), label: 'Orders'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
       ),
     );

@@ -1,7 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:food_waste_app/data/models/restaurant.dart';
+import 'package:food_waste_app/data/services/api_client.dart';
+import 'restaurant_detail_screen.dart';
 
-class MapViewScreen extends StatelessWidget {
+class MapViewScreen extends StatefulWidget {
   const MapViewScreen({super.key});
+
+  @override
+  State<MapViewScreen> createState() => _MapViewScreenState();
+}
+
+class _MapViewScreenState extends State<MapViewScreen> {
+  final ApiClient _apiClient = ApiClient();
+  final TextEditingController _searchController = TextEditingController();
+  List<Restaurant> _restaurants = [];
+  bool _loading = false;
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRestaurants();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchRestaurants({String? search}) async {
+    setState(() => _loading = true);
+    try {
+      final results = await _apiClient.getRestaurants(search: search);
+      if (mounted) setState(() => _restaurants = results);
+    } catch (_) {
+      // keep existing list on error
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _onSearchChanged(String value) {
+    _fetchRestaurants(search: value.isEmpty ? null : value);
+  }
+
+  void _openRestaurantDetail(Restaurant restaurant) async {
+    try {
+      final detail = await _apiClient.getRestaurantDetail(restaurant.id);
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RestaurantDetailScreen(
+            restaurant: detail,
+            apiClient: _apiClient,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('ApiException: ', ''))),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,22 +98,31 @@ class MapViewScreen extends StatelessWidget {
                 children: [
                   const Icon(Icons.search, color: Color(0xFF707973)),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: TextField(
-                      decoration: InputDecoration(
+                      controller: _searchController,
+                      onChanged: _onSearchChanged,
+                      decoration: const InputDecoration(
                         hintText: "Yerel dükkanları ara...",
                         border: InputBorder.none,
                       ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F5238),
-                      borderRadius: BorderRadius.circular(12),
+                  if (_loading)
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F5238),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.tune, color: Colors.white, size: 18),
                     ),
-                    child: const Icon(Icons.tune, color: Colors.white, size: 18),
-                  ),
                 ],
               ),
             ),
@@ -61,67 +133,94 @@ class MapViewScreen extends StatelessWidget {
             bottom: 30,
             left: 15,
             right: 15,
-            child: _buildModernBox(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 85,
-                    height: 85,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFB1F0CE),
-                      borderRadius: BorderRadius.circular(20),
+            child: _buildRestaurantBottomCard(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRestaurantBottomCard() {
+    if (_restaurants.isEmpty) {
+      return _buildModernBox(
+        padding: const EdgeInsets.all(16),
+        child: const Center(child: Text('Restoran bulunamadi.')),
+      );
+    }
+
+    // Show one restaurant at a time with prev/next arrows
+    final restaurant = _restaurants[_selectedIndex % _restaurants.length];
+
+    return _buildModernBox(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 85,
+            height: 85,
+            decoration: BoxDecoration(
+              color: const Color(0xFFB1F0CE),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(Icons.store, size: 45, color: Color(0xFF0F5238)),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  restaurant.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                Text(
+                  '${restaurant.city} • ${restaurant.address}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${_selectedIndex % _restaurants.length + 1}/${_restaurants.length}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
-                    child: const Icon(Icons.bakery_dining, size: 45, color: Color(0xFF0F5238)),
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
+                    Row(
                       children: [
-                        const Text(
-                          'Başak Fırın & Pastane',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        const Text(
-                          "600m uzakta • 18:00'de kapanıyor",
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text("GÜNÜN FIRSATI", style: TextStyle(color: Color(0xFF9D4300), fontSize: 10, fontWeight: FontWeight.bold)),
-                                Text(
-                                  "₺145,00",
-                                  style: TextStyle(
-                                    color: Color(0xFF0F5238),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            ElevatedButton(
-                              onPressed: () {},
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0F5238),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              ),
-                              child: const Text("Rezerve Et", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            ),
-                          ],
+                        if (_restaurants.length > 1)
+                          IconButton(
+                            onPressed: () => setState(() => _selectedIndex--),
+                            icon: const Icon(Icons.chevron_left, color: Color(0xFF0F5238)),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        if (_restaurants.length > 1)
+                          IconButton(
+                            onPressed: () => setState(() => _selectedIndex++),
+                            icon: const Icon(Icons.chevron_right, color: Color(0xFF0F5238)),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ElevatedButton(
+                          onPressed: () => _openRestaurantDetail(restaurant),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F5238),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 10),
+                          ),
+                          child: const Text('Detay',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],

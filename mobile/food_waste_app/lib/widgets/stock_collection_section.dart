@@ -8,6 +8,9 @@ class StockCollectionSection extends StatelessWidget {
   final ValueChanged<double> onStockChanged;
   final VoidCallback onPickFrom;
   final VoidCallback onPickUntil;
+  final VoidCallback? onSaveDraft;
+  final VoidCallback? onListProduct;
+  final bool isSubmitting;
 
   const StockCollectionSection({
     super.key,
@@ -17,6 +20,9 @@ class StockCollectionSection extends StatelessWidget {
     required this.onStockChanged,
     required this.onPickFrom,
     required this.onPickUntil,
+    this.onSaveDraft,
+    this.onListProduct,
+    this.isSubmitting = false,
   });
 
   static const _onSurface = Color(0xFF191C1C);
@@ -319,7 +325,7 @@ class StockCollectionSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: isSubmitting ? null : onSaveDraft,
                   child: Text(
                     'Save Draft',
                     style: GoogleFonts.plusJakartaSans(
@@ -348,8 +354,17 @@ class StockCollectionSection extends StatelessWidget {
                   ],
                 ),
                 child: TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.rocket_launch, color: Colors.white),
+                  onPressed: isSubmitting ? null : onListProduct,
+                  icon: isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.rocket_launch, color: Colors.white),
                   label: Text(
                     'List Product',
                     style: GoogleFonts.plusJakartaSans(

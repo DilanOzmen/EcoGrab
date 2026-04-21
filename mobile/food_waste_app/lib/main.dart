@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:food_waste_app/screens/living_larder_login_screen.dart';
-import 'package:food_waste_app/screens/order_tracking_screen.dart';
 
 void main() {
   runApp(const FoodWasteApp());
@@ -38,7 +37,6 @@ class FoodWasteApp extends StatelessWidget {
       ),
       routes: {
         '/login': (context) => const LivingLarderLoginScreen(),
-        '/tracking': (context) => const OrderTrackingScreen(),
       },
       home: const LivingLarderLoginScreen(),
     );

@@ -1,6 +1,8 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../../core/app_state.dart';
 import '../models/auth_response.dart';
+import '../models/customer_order.dart';
 import '../models/product.dart';
 import '../models/restaurant.dart';
 import '../models/restaurant_detail.dart';
@@ -167,7 +169,7 @@ class ApiClient {
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api/customer/orders/reserve'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _authHeaders(),
       body: jsonEncode({
         'ProductId': productId,
         'Quantity': quantity,
@@ -193,7 +195,7 @@ class ApiClient {
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api/seller/products'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _authHeaders(),
       body: jsonEncode({
         'Name': name,
         'Description': description,
@@ -214,7 +216,65 @@ class ApiClient {
     return responseJson['id'] ?? 0;
   }
 
+  // ── Orders ────────────────────────────────────────────────────────────────
+
+  Future<List<CustomerOrder>> getMyOrders({bool onlyActive = false}) async {
+    final uri = Uri.parse('$baseUrl/api/customer/orders/my').replace(
+      queryParameters: {'onlyActive': onlyActive.toString()},
+    );
+    final response = await http.get(uri, headers: _authHeaders());
+    if (response.statusCode != 200) {
+      throw ApiException(_extractErrorMessage(response.body, 'Siparisler yuklenemedi.'));
+    }
+    final list = jsonDecode(response.body) as List<dynamic>;
+    return list.map((e) => CustomerOrder.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<CustomerOrder>> getMyReservations() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/customer/reservations/my'),
+      headers: _authHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(_extractErrorMessage(response.body, 'Rezervasyonlar yuklenemedi.'));
+    }
+    final list = jsonDecode(response.body) as List<dynamic>;
+    return list.map((e) => CustomerOrder.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<CustomerOrder> getOrderDetail(int orderId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/customer/orders/$orderId'),
+      headers: _authHeaders(),
+    );
+    if (response.statusCode == 404) {
+      throw ApiException('Siparis bulunamadi.');
+    }
+    if (response.statusCode != 200) {
+      throw ApiException('Siparis detayi yuklenemedi.');
+    }
+    return CustomerOrder.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  Future<void> cancelOrder(int orderId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/customer/orders/$orderId/cancel'),
+      headers: _authHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(_extractErrorMessage(response.body, 'Iptal basarisiz.'));
+    }
+  }
+
   // ── helpers ───────────────────────────────────────────────────────────────
+
+  Map<String, String> _authHeaders() {
+    final token = AppState.currentUser?.token ?? '';
+    return {
+      'Content-Type': 'application/json',
+      if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
 
   Map<String, dynamic>? _tryDecode(String body) {
     try {
