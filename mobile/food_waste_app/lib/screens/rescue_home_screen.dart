@@ -4,7 +4,7 @@ import 'package:food_waste_app/data/models/customer_order.dart';
 import 'package:food_waste_app/data/models/product.dart';
 import 'package:food_waste_app/data/models/restaurant.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
-import 'living_larder_login_screen.dart';
+import 'login_screen.dart';
 import 'map_view_screen.dart';
 import 'order_tracking_screen.dart';
 import 'product_detail_screen.dart';
@@ -106,7 +106,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const LivingLarderLoginScreen()),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
   }
 

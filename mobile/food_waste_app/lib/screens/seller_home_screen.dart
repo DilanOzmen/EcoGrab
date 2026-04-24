@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:food_waste_app/core/app_state.dart';
-import 'living_larder_login_screen.dart';
+import 'login_screen.dart';
 
 class SellerHomeScreen extends StatelessWidget {
   const SellerHomeScreen({super.key});
@@ -34,7 +34,7 @@ class SellerHomeScreen extends StatelessWidget {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const LivingLarderLoginScreen(),
+                  builder: (_) => const LoginScreen(),
                 ),
               );
             },

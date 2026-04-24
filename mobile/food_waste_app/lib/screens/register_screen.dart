@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:food_waste_app/core/app_state.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
-import 'package:food_waste_app/screens/register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   static const primary = Color(0xFF0F5238);
   static const background = Color(0xFFF8FAF8);
   static const inputBg = Color(0xFFECEFED);
@@ -21,28 +20,42 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _apiClient = ApiClient();
 
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool isLoading = false;
+  bool isCustomer = true;
   bool isPasswordHidden = true;
+  bool acceptedTerms = false;
+  bool isLoading = false;
 
   @override
   void dispose() {
+    _fullNameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (!acceptedTerms) {
+      _showMessage('Kullanım şartlarını kabul etmelisiniz.');
+      return;
+    }
 
     setState(() => isLoading = true);
 
     try {
-      final auth = await _apiClient.login(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
+      final auth = await _apiClient.register(
+        fullName: _fullNameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        phone: _phoneController.text.trim(),
+        role: isCustomer ? 'Customer' : 'Seller',
       );
 
       AppState.setUser(auth);
@@ -112,16 +125,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   children: [
                     _buildLogo(),
-                    const SizedBox(height: 34),
+                    const SizedBox(height: 28),
                     _buildTitle(),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 26),
+                    _buildRoleSection(),
+                    const SizedBox(height: 22),
                     _buildFields(),
-                    const SizedBox(height: 26),
-                    _buildLoginButton(),
-                    const SizedBox(height: 26),
-                    _buildRegisterText(),
-                    const SizedBox(height: 26),
-                    _buildSecurityBadge(),
+                    const SizedBox(height: 16),
+                    _buildTerms(),
+                    const SizedBox(height: 22),
+                    _buildRegisterButton(),
+                    const SizedBox(height: 28),
+                    _buildLoginText(),
                   ],
                 ),
               ),
@@ -163,7 +178,8 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Hesabınıza giriş yapın.',
+          'Sürdürülebilir bir gelecek için ilk adımı atın.',
+          textAlign: TextAlign.center,
           style: GoogleFonts.manrope(
             fontSize: 13,
             color: textSoft,
@@ -174,10 +190,95 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Widget _buildRoleSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('Hesap Türü'),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF2F4F2),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              _roleButton(
+                text: 'Müşteri',
+                icon: Icons.person,
+                selected: isCustomer,
+                onTap: () => setState(() => isCustomer = true),
+              ),
+              _roleButton(
+                text: 'Satıcı',
+                icon: Icons.storefront,
+                selected: !isCustomer,
+                onTap: () => setState(() => isCustomer = false),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _roleButton({
+    required String text,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          decoration: BoxDecoration(
+            color: selected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 17, color: selected ? primary : textSoft),
+              const SizedBox(width: 6),
+              Text(
+                text,
+                style: GoogleFonts.manrope(
+                  fontSize: 12,
+                  color: selected ? primary : textSoft,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFields() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _label('Ad Soyad'),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _fullNameController,
+          decoration: _inputDecoration(
+            hint: 'İsminizi girin',
+            icon: Icons.badge_outlined,
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Ad soyad zorunludur';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
         _label('E-posta'),
         const SizedBox(height: 8),
         TextFormField(
@@ -198,12 +299,28 @@ class _LoginScreenState extends State<LoginScreen> {
           },
         ),
         const SizedBox(height: 16),
+        _label('Telefon'),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _phoneController,
+          keyboardType: TextInputType.phone,
+          decoration: _inputDecoration(
+            hint: 'Telefon numaranızı girin',
+            icon: Icons.phone_outlined,
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Telefon zorunludur';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
         _label('Şifre'),
         const SizedBox(height: 8),
         TextFormField(
           controller: _passwordController,
           obscureText: isPasswordHidden,
-          onFieldSubmitted: (_) => isLoading ? null : _login(),
           decoration: _inputDecoration(
             hint: '••••••••',
             icon: Icons.lock_outline,
@@ -222,6 +339,9 @@ class _LoginScreenState extends State<LoginScreen> {
             if (value == null || value.trim().isEmpty) {
               return 'Şifre zorunludur';
             }
+            if (value.length < 6) {
+              return 'Şifre en az 6 karakter olmalıdır';
+            }
             return null;
           },
         ),
@@ -229,7 +349,36 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildLoginButton() {
+  Widget _buildTerms() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(
+          value: acceptedTerms,
+          activeColor: primary,
+          visualDensity: VisualDensity.compact,
+          onChanged: (value) {
+            setState(() => acceptedTerms = value ?? false);
+          },
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Kullanım Şartları ve Gizlilik Politikası’nı okudum ve kabul ediyorum.',
+              style: GoogleFonts.manrope(
+                fontSize: 11,
+                color: textSoft,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRegisterButton() {
     return Container(
       width: double.infinity,
       height: 56,
@@ -249,7 +398,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
       child: ElevatedButton(
-        onPressed: isLoading ? null : _login,
+        onPressed: isLoading ? null : _register,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
@@ -267,7 +416,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               )
             : Text(
-                'Giriş Yap',
+                'Hesap Oluştur',
                 style: GoogleFonts.plusJakartaSans(
                   color: Colors.white,
                   fontSize: 15,
@@ -278,14 +427,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildRegisterText() {
+  Widget _buildLoginText() {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const RegisterScreen()),
-        );
-      },
+      onTap: () => Navigator.pop(context),
       child: RichText(
         text: TextSpan(
           style: GoogleFonts.manrope(
@@ -293,33 +437,15 @@ class _LoginScreenState extends State<LoginScreen> {
             fontSize: 12,
           ),
           children: const [
-            TextSpan(text: 'Hesabınız yok mu? '),
+            TextSpan(text: 'Zaten bir hesabınız var mı? '),
             TextSpan(
-              text: 'Hesap Oluştur',
+              text: 'Giriş Yap',
               style: TextStyle(
                 color: primary,
                 fontWeight: FontWeight.w800,
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSecurityBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFB1F0CE).withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        'JWT-tabanlı güvenli oturum yönetimi',
-        style: GoogleFonts.manrope(
-          color: primary,
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
         ),
       ),
     );
