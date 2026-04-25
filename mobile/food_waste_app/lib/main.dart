@@ -4,7 +4,6 @@ import 'package:food_waste_app/screens/login_screen.dart';
 import 'package:food_waste_app/screens/register_screen.dart';
 import 'package:food_waste_app/screens/rescue_home_screen.dart';
 import 'package:food_waste_app/screens/seller_home_screen.dart';
-import 'package:food_waste_app/data/services/api_client.dart';
 
 void main() {
   runApp(const FoodWasteApp());
@@ -18,7 +17,6 @@ class FoodWasteApp extends StatelessWidget {
     const background = Color(0xFFF8FAF8);
     const primary = Color(0xFF1B4332);
     const onSurface = Color(0xFF191C1B);
-    final ApiClient apiClient = ApiClient();
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -44,7 +42,7 @@ class FoodWasteApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/customer-home': (context) => RescueHomeScreen(apiclient: apiClient),
+        '/customer-home': (context) => const RescueHomeScreen(),
         '/seller-home': (context) => const SellerHomeScreen(),
       },
     );
