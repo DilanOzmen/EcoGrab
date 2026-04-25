@@ -9,6 +9,7 @@ import 'map_view_screen.dart';
 import 'order_tracking_screen.dart';
 import 'product_detail_screen.dart';
 import 'restaurant_detail_screen.dart';
+import 'profile_screen.dart';
 
 class RescueHomeScreen extends StatefulWidget {
   const RescueHomeScreen({super.key});
@@ -330,24 +331,17 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
         return const MapViewScreen();
       case 2:
         return _buildOrdersTab();
-      case 3:
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                AppState.currentUser?.email ?? '-',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: _logout,
-                icon: const Icon(Icons.logout),
-                label: const Text('Cikis Yap'),
-              ),
-            ],
-          ),
-        );
+ case 3:
+  return ProfileScreen(
+    apiClient: _apiClient,
+    onLogout: _logout,
+    onOrdersTap: () {
+      setState(() {
+        _selectedIndex = 2;
+        _ordersFuture = _loadOrdersData();
+      });
+    },
+  );
       default:
         return const SizedBox.shrink();
     }

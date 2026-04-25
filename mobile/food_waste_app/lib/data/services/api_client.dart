@@ -215,6 +215,42 @@ class ApiClient {
     final responseJson = jsonDecode(response.body) as Map<String, dynamic>;
     return responseJson['id'] ?? 0;
   }
+    // ── User Profile ─────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> getMe() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/users/me'),
+      headers: _authHeaders(),
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Profil bilgileri yuklenemedi.'),
+      );
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<void> updateMe({
+    required String fullName,
+    required String phone,
+  }) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/users/me'),
+      headers: _authHeaders(),
+      body: jsonEncode({
+        'fullName': fullName,
+        'phone': phone,
+      }),
+    );
+
+    if (response.statusCode != 204) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Profil guncellenemedi.'),
+      );
+    }
+  }
 
   // ── Orders ────────────────────────────────────────────────────────────────
 
