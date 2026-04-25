@@ -7,7 +7,7 @@ namespace FoodWaste.Business.Services;
 public class AuthValidationService : IAuthValidationService
 {
     private static readonly Regex PasswordRegex = new(
-        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{8,}$",
+        "^.{6,}$",
         RegexOptions.Compiled);
 
     public IReadOnlyList<string> ValidateRegister(string fullName, string email, string password, string role)
@@ -26,7 +26,7 @@ public class AuthValidationService : IAuthValidationService
 
         if (!IsStrongPassword(password))
         {
-            errors.Add("Sifre en az 8 karakter, buyuk harf, kucuk harf, rakam ve ozel karakter icermelidir.");
+            errors.Add("Sifre en az 6 karakter olmalidir.");
         }
 
         if (!IsValidRegisterRole(role))
@@ -90,7 +90,6 @@ public class AuthValidationService : IAuthValidationService
         }
 
         return role.Equals("Customer", StringComparison.OrdinalIgnoreCase)
-               || role.Equals("Seller", StringComparison.OrdinalIgnoreCase)
-               || role.Equals("Isletme", StringComparison.OrdinalIgnoreCase);
+             || role.Equals("Seller", StringComparison.OrdinalIgnoreCase);
     }
 }

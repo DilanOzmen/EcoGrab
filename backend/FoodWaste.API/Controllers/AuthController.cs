@@ -22,11 +22,7 @@ public class AuthController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
-        var registerRole = request.Role.Equals("Isletme", StringComparison.OrdinalIgnoreCase)
-            ? "Seller"
-            : request.Role;
-
-        var errors = authValidationService.ValidateRegister(request.FullName, request.Email, request.Password, registerRole);
+        var errors = authValidationService.ValidateRegister(request.FullName, request.Email, request.Password, request.Role);
         if (errors.Count > 0)
         {
             return BadRequest(new ApiErrorResponse("Gecersiz kayit istegi.", errors));
@@ -37,7 +33,7 @@ public class AuthController(
             request.Email,
             request.Password,
             request.Phone,
-            registerRole,
+            request.Role,
             cancellationToken);
 
         if (!result.IsSuccess)
