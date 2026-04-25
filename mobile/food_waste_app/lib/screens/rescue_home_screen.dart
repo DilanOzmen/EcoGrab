@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:food_waste_app/core/app_state.dart';
-import 'package:food_waste_app/data/models/customer_order.dart';
-import 'package:food_waste_app/data/models/product.dart';
-import 'package:food_waste_app/data/models/restaurant.dart';
-import 'package:food_waste_app/data/services/api_client.dart';
-import 'login_screen.dart';
-import 'map_view_screen.dart';
-import 'order_tracking_screen.dart';
+import '../data/models/product.dart';
+import '../data/models/restaurant.dart';
+import '../data/services/api_client.dart';
 import 'product_detail_screen.dart';
-import 'restaurant_detail_screen.dart';
 
 class RescueHomeScreen extends StatefulWidget {
-  const RescueHomeScreen({super.key});
+  final ApiClient apiclient;
+  const RescueHomeScreen({super.key, required this.apiclient});
 
   @override
   State<RescueHomeScreen> createState() => _RescueHomeScreenState();
@@ -19,362 +14,304 @@ class RescueHomeScreen extends StatefulWidget {
 
 class _RescueHomeScreenState extends State<RescueHomeScreen> {
   int _selectedIndex = 0;
-  final ApiClient _apiClient = ApiClient();
-
   late Future<_HomeData> _homeFuture;
-  late Future<List<CustomerOrder>> _ordersFuture;
 
   @override
   void initState() {
     super.initState();
     _homeFuture = _loadHomeData();
-    _ordersFuture = _loadOrdersData();
   }
 
   Future<_HomeData> _loadHomeData() async {
     final results = await Future.wait([
-      _apiClient.getProducts(),
-      _apiClient.getRestaurants(),
+      widget.apiclient.getProducts(),
+      widget.apiclient.getRestaurants(),
     ]);
-
     return _HomeData(
       products: results[0] as List<Product>,
       restaurants: results[1] as List<Restaurant>,
     );
   }
 
-  Future<List<CustomerOrder>> _loadOrdersData() async {
-    final results = await Future.wait([
-      _apiClient.getMyOrders(),
-      _apiClient.getMyReservations(),
-    ]);
-
-    final merged = <CustomerOrder>[
-      ...results[0],
-      ...results[1],
-    ];
-
-    final unique = <int, CustomerOrder>{};
-    for (final order in merged) {
-      unique[order.id] = order;
-    }
-
-    final list = unique.values.toList();
-    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return list;
-  }
-
-  Future<void> _refreshHome() async {
-    final future = _loadHomeData();
-    setState(() {
-      _homeFuture = future;
-    });
-    await future;
-  }
-
-  Future<void> _refreshOrders() async {
-    final future = _loadOrdersData();
-    setState(() {
-      _ordersFuture = future;
-    });
-    await future;
-  }
-
-  Future<void> _openRestaurantDetail(Restaurant restaurant) async {
-    try {
-      final detail = await _apiClient.getRestaurantDetail(restaurant.id);
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => RestaurantDetailScreen(
-            restaurant: detail,
-            apiClient: _apiClient,
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('ApiException: ', ''))),
-      );
-    }
-  }
-
-  Future<void> _logout() async {
-    AppState.clear();
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
-  }
-
-  Widget _buildHomeTab() {
-    return FutureBuilder<_HomeData>(
-      future: _homeFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Veriler yuklenemedi.\n${snapshot.error.toString().replaceAll('ApiException: ', '')}',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: _refreshHome,
-                    child: const Text('Tekrar Dene'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        final data = snapshot.data;
-        if (data == null) {
-          return const Center(child: Text('Veri bulunamadi.'));
-        }
-
-        return RefreshIndicator(
-          onRefresh: _refreshHome,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            children: [
-              Text(
-                'Merhaba, ${AppState.currentUser?.fullName ?? 'Kullanici'}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Indirimli Urunler',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              if (data.products.isEmpty)
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text('Gosterilecek urun bulunamadi.'),
-                  ),
-                )
-              else
-                ...data.products.take(10).map(
-                  (product) => Card(
-                    child: ListTile(
-                      title: Text(product.name),
-                      subtitle: Text(
-                        '${product.restaurantName} • Stok: ${product.stock}',
-                      ),
-                      trailing: Text(
-                        '${product.discountedPrice.toStringAsFixed(2)} TL',
-                        style: const TextStyle(
-                          color: Color(0xFF0F5238),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      onTap: () async {
-                        final changed = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ProductDetailScreen(
-                              product: product,
-                              apiClient: _apiClient,
-                            ),
-                          ),
-                        );
-
-                        if (changed == true && mounted) {
-                          _refreshHome();
-                        }
-                      },
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 16),
-              const Text(
-                'Restoranlar',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              if (data.restaurants.isEmpty)
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text('Gosterilecek restoran bulunamadi.'),
-                  ),
-                )
-              else
-                ...data.restaurants.take(10).map(
-                  (restaurant) => Card(
-                    child: ListTile(
-                      title: Text(restaurant.name),
-                      subtitle: Text('${restaurant.city} • ${restaurant.address}'),
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0xFFEAF4EE),
-                        child: Icon(Icons.store, color: Color(0xFF0F5238)),
-                      ),
-                      onTap: () => _openRestaurantDetail(restaurant),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 12),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildOrdersTab() {
-    return FutureBuilder<List<CustomerOrder>>(
-      future: _ordersFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    snapshot.error.toString().replaceAll('ApiException: ', ''),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: _refreshOrders,
-                    child: const Text('Tekrar Dene'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        final orders = snapshot.data ?? [];
-        if (orders.isEmpty) {
-          return RefreshIndicator(
-            onRefresh: _refreshOrders,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: const [
-                SizedBox(height: 220),
-                Center(child: Text('Henuz siparis veya rezervasyon bulunmuyor.')),
-              ],
-            ),
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: _refreshOrders,
-          child: ListView.builder(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              final order = orders[index];
-              final itemNames = order.items.map((i) => i.productName).join(', ');
-              return Card(
-                child: ListTile(
-                  title: Text('#${order.id} - ${order.status}'),
-                  subtitle: Text(itemNames.isNotEmpty ? itemNames : 'Urun yok'),
-                  trailing: Text(
-                    '${order.totalAmount.toStringAsFixed(2)} TL',
-                    style: const TextStyle(
-                      color: Color(0xFF0F5238),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => OrderTrackingScreen(
-                          orderId: order.id,
-                          apiClient: _apiClient,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildBody() {
-    switch (_selectedIndex) {
-      case 0:
-        return _buildHomeTab();
-      case 1:
-        return const MapViewScreen();
-      case 2:
-        return _buildOrdersTab();
-      case 3:
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                AppState.currentUser?.email ?? '-',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: _logout,
-                icon: const Icon(Icons.logout),
-                label: const Text('Cikis Yap'),
-              ),
-            ],
-          ),
-        );
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _buildBody(),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-            if (index == 2) {
-              _ordersFuture = _loadOrdersData();
+      backgroundColor: const Color(0xFFFBFBFB),
+      body: SafeArea(
+        child: FutureBuilder<_HomeData>(
+          future: _homeFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: Color(0xFF1B4332)));
             }
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF0F5238),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.map_rounded), label: 'Map'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), label: 'Orders'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+            if (snapshot.hasError) return Center(child: Text('Hata: ${snapshot.error}'));
+            final data = snapshot.data!;
+
+            return RefreshIndicator(
+              onRefresh: () async => setState(() => _homeFuture = _loadHomeData()),
+              color: const Color(0xFF1B4332),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. Üst Kısım: Konum ve Profil
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+                      child: Row(
+                        children: [
+                          Icon(Icons.location_on, color: Color(0xFF2D6A4F), size: 22),
+                          SizedBox(width: 8),
+                          Text('Kadıköy, İstanbul', 
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B4332))
+                          ),
+                          Spacer(),
+                          CircleAvatar(
+                            radius: 18, 
+                            backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=User&background=D8F3DC&color=1B4332')
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // 2. Kategori Seçenekleri
+                    SizedBox(
+                      height: 110,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.only(left: 20, top: 10),
+                        children: const [
+                          CategoryChip(icon: Icons.storefront, label: 'Market', isSelected: true),
+                          CategoryChip(icon: Icons.coffee, label: 'Kafe'),
+                          CategoryChip(icon: Icons.bakery_dining, label: 'Fırın'),
+                          CategoryChip(icon: Icons.local_drink, label: 'İçecek'),
+                        ],
+                      ),
+                    ),
+
+                    // 3. Bölüm: Flaş Ürünler (Öne Çıkan Kart)
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+                      child: Text('Flaş Ürünler', 
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1B4332))
+                      ),
+                    ),
+                    if (data.products.isNotEmpty)
+                      _buildVerticalProductCard(
+                        data.products.first,
+                        'https://images.unsplash.com/photo-1547496502-affa22d38842?w=800',
+                        '-%60 İNDİRİM'
+                      ),
+
+                    // 4. Bölüm: Popüler Kafeler
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 30, 20, 10),
+                      child: Text('Popüler Kafeler', 
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1B4332))
+                      ),
+                    ),
+                    _buildCategorizedKitchenCard(
+                      'Kahve Dünyası', 
+                      '4.9', '0.5 km', 'Kafe', 
+                      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800',
+                      '₺45.00'
+                    ),
+
+                    // 5. Bölüm: Şehir Fırınları
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 30, 20, 10),
+                      child: Text('Şehir Fırınları', 
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1B4332))
+                      ),
+                    ),
+                    _buildCategorizedKitchenCard(
+                      'L\'Artisan Bakery', 
+                      '4.8', '0.2 km', 'Fırın', 
+                      'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800',
+                      '₺35.00'
+                    ),
+
+                    // 6. Bölüm: Sağlıklı Seçenekler
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 30, 20, 10),
+                      child: Text('Sağlıklı Seçenekler', 
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1B4332))
+                      ),
+                    ),
+                    if (data.products.length > 1)
+                      _buildVerticalProductCard(
+                        data.products[1],
+                        'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800',
+                        'TAZE SEÇENEK'
+                      ),
+
+                    // 7. Bölüm: Gece Atıştırmalıkları (Dönerci Ali Düzeltildi)
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 30, 20, 10),
+                      child: Text('Gece Atıştırmalıkları', 
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1B4332))
+                      ),
+                    ),
+                    _buildCategorizedKitchenCard(
+                      'Dönerci Ali', 
+                      '4.7', '1.2 km', 'Restoran', 
+                      'https://images.unsplash.com/photo-1633383718081-22ac93e3dbf1?w=800',
+                      '₺120.00'
+                    ),
+
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  // Ürün Kartı Tasarımı
+  Widget _buildVerticalProductCard(Product product, String imageUrl, String tag) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ProductDetailScreen(product: product, apiClient: widget.apiclient)
+      )),
+      child: Container(
+        width: double.infinity,
+        height: 220,
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          image: DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover),
+        ),
+        child: Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter, 
+                  colors: [Colors.black.withAlpha(150), Colors.transparent]
+                ),
+              ),
+            ),
+            Positioned(
+              top: 15, left: 15,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(color: Colors.orange[900], borderRadius: BorderRadius.circular(10)),
+                child: Text(tag, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            Positioned(
+              bottom: 20, left: 20,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(product.name, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                  Text('${product.restaurantName} • Stok: ${product.stock}', 
+                    style: const TextStyle(color: Colors.white70, fontSize: 13)
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Restoran/Mutfak Kartı Tasarımı
+  Widget _buildCategorizedKitchenCard(String name, String rating, String dist, String cat, String img, String price) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(28), 
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 20)]
+      ),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)), 
+            child: Image.network(img, height: 170, width: double.infinity, fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 170, color: Colors.grey[200], child: const Icon(Icons.broken_image, size: 50)
+              ),
+            )
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 16),
+                        Text(' $rating ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('• $dist • $cat', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                      ],
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(color: const Color(0xFFD8F3DC), borderRadius: BorderRadius.circular(15)),
+                  child: Text(price, style: const TextStyle(color: Color(0xFF1B4332), fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return BottomNavigationBar(
+      currentIndex: _selectedIndex,
+      onTap: (i) => setState(() => _selectedIndex = i),
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: const Color(0xFF1B4332),
+      unselectedItemColor: Colors.grey[400],
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Anasayfa'),
+        BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Harita'),
+        BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), label: 'Siparişler'),
+        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
+      ],
+    );
+  }
+}
+
+class CategoryChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  const CategoryChip({super.key, required this.icon, required this.label, this.isSelected = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 18),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFFD8F3DC) : const Color(0xFFF3F5F7),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(icon, color: const Color(0xFF1B4332), size: 26),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
         ],
       ),
     );
@@ -384,9 +321,5 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
 class _HomeData {
   final List<Product> products;
   final List<Restaurant> restaurants;
-
-  const _HomeData({
-    required this.products,
-    required this.restaurants,
-  });
+  const _HomeData({required this.products, required this.restaurants});
 }
