@@ -73,13 +73,6 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
     await future;
   }
 
-  Future<void> _refreshOrders() async {
-    final future = _loadOrdersData();
-    setState(() {
-      _ordersFuture = future;
-    });
-    await future;
-  }
 
   Future<void> _openRestaurantDetail(Restaurant restaurant) async {
     try {
@@ -241,88 +234,144 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
   }
 
   Widget _buildOrdersTab() {
-    return FutureBuilder<List<CustomerOrder>>(
-      future: _ordersFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
+  return FutureBuilder<List<CustomerOrder>>(
+    future: _ordersFuture,
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (snapshot.hasError) {
+        return Center(child: Text('Hata oluştu'));
+      }
+
+      final orders = snapshot.data ?? [];
+
+      if (orders.isEmpty) {
+        return const Center(
+          child: Text('Henüz sipariş yok'),
+        );
+      }
+
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: orders.length,
+        itemBuilder: (context, index) {
+          final order = orders[index];
+
+          final itemNames =
+              order.items.map((e) => e.productName).join(', ');
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => OrderTrackingScreen(
+                      orderId: order.id,
+                      apiClient: _apiClient,
+                    ),
+                  ),
+                );
+              },
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    children: [
+                      Text(
+                        '#${order.id}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const Spacer(),
+                      _statusBadge(order.status),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   Text(
-                    snapshot.error.toString().replaceAll('ApiException: ', ''),
-                    textAlign: TextAlign.center,
+                    itemNames,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: _refreshOrders,
-                    child: const Text('Tekrar Dene'),
-                  ),
+                  Row(
+                    children: [
+                      Text(
+                        '${order.totalAmount.toStringAsFixed(2)} TL',
+                        style: const TextStyle(
+                          color: Color(0xFF0F5238),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  )
                 ],
               ),
             ),
           );
-        }
+        },
+      );
+    },
+  );
+}
+Widget _statusBadge(String status) {
+  Color color;
 
-        final orders = snapshot.data ?? [];
-        if (orders.isEmpty) {
-          return RefreshIndicator(
-            onRefresh: _refreshOrders,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: const [
-                SizedBox(height: 220),
-                Center(child: Text('Henuz siparis veya rezervasyon bulunmuyor.')),
-              ],
-            ),
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: _refreshOrders,
-          child: ListView.builder(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              final order = orders[index];
-              final itemNames = order.items.map((i) => i.productName).join(', ');
-              return Card(
-                child: ListTile(
-                  title: Text('#${order.id} - ${order.status}'),
-                  subtitle: Text(itemNames.isNotEmpty ? itemNames : 'Urun yok'),
-                  trailing: Text(
-                    '${order.totalAmount.toStringAsFixed(2)} TL',
-                    style: const TextStyle(
-                      color: Color(0xFF0F5238),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => OrderTrackingScreen(
-                          orderId: order.id,
-                          apiClient: _apiClient,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
+  switch (status.toLowerCase()) {
+    case 'pending':
+      color = Colors.orange;
+      break;
+    case 'confirmed':
+      color = Colors.blue;
+      break;
+    case 'readyforpickup':
+      color = const Color(0xFF0F5238);
+      break;
+    case 'completed':
+      color = Colors.grey;
+      break;
+    default:
+      color = Colors.grey;
   }
 
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      status,
+      style: TextStyle(
+        color: color,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  );
+}
   Widget _buildBody() {
     switch (_selectedIndex) {
       case 0:

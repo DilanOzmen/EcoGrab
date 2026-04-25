@@ -183,38 +183,42 @@ class ApiClient {
 
   // -- Seller Products
 
-  Future<int> createProduct({
-    required String name,
-    required String description,
-    required double originalPrice,
-    required double discountedPrice,
-    required String category,
-    required int stock,
-    required String collectionFrom,
-    required String collectionUntil,
-  }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/seller/products'),
-      headers: _authHeaders(),
-      body: jsonEncode({
-        'Name': name,
-        'Description': description,
-        'OriginalPrice': originalPrice,
-        'DiscountedPrice': discountedPrice,
-        'Category': category,
-        'Stock': stock,
-        'CollectionWindowFrom': collectionFrom,
-        'CollectionWindowUntil': collectionUntil,
-      }),
+ Future<int> createProduct({
+  required int restaurantId,
+  required String name,
+  required String description,
+  required double originalPrice,
+  required double discountedPrice,
+  required String category,
+  required int stock,
+  required DateTime expiryDate,
+  required bool isActive,
+}) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/api/seller/products'),
+    headers: _authHeaders(),
+    body: jsonEncode({
+      'restaurantId': restaurantId,
+      'category': category,
+      'name': name,
+      'description': description,
+      'originalPrice': originalPrice,
+      'discountedPrice': discountedPrice,
+      'stock': stock,
+      'expiryDate': expiryDate.toIso8601String(),
+      'isActive': isActive,
+    }),
+  );
+
+  if (response.statusCode != 201 && response.statusCode != 200) {
+    throw ApiException(
+      _extractErrorMessage(response.body, 'Urun olusturma basarisiz.'),
     );
-
-    if (response.statusCode != 201) {
-      throw ApiException(_extractErrorMessage(response.body, 'Urun olusturma basarisiz.'));
-    }
-
-    final responseJson = jsonDecode(response.body) as Map<String, dynamic>;
-    return responseJson['id'] ?? 0;
   }
+
+  final responseJson = jsonDecode(response.body) as Map<String, dynamic>;
+  return responseJson['id'] ?? 0;
+}
     // ── User Profile ─────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> getMe() async {

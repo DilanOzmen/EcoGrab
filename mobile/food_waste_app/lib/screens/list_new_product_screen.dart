@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
-import 'package:food_waste_app/widgets/product_listing_header.dart';
-import 'package:food_waste_app/widgets/product_details_form.dart';
-import 'package:food_waste_app/widgets/stock_collection_section.dart';
 
 class ListNewProductScreen extends StatefulWidget {
   const ListNewProductScreen({super.key});
@@ -12,151 +10,587 @@ class ListNewProductScreen extends StatefulWidget {
 }
 
 class _ListNewProductScreenState extends State<ListNewProductScreen> {
-  final titleController = TextEditingController(
-    text: 'Organic Seasonal Veggie Box',
-  );
+  static const primary = Color(0xFF0F5238);
+  static const background = Color(0xFFF8FAF8);
+  static const surfaceLow = Color(0xFFF2F4F2);
+  static const inputBg = Color(0xFFFFFFFF);
+  static const textDark = Color(0xFF191C1B);
+  static const textSoft = Color(0xFF707973);
 
-  final descriptionController = TextEditingController(
-    text:
-        "A mix of today's harvest. Includes carrots, kale, and tomatoes. Best for immediate consumption to reduce waste!",
-  );
+  final _apiClient = ApiClient();
+  final _formKey = GlobalKey<FormState>();
 
-  final priceController = TextEditingController(text: '12.50');
+  final restaurantIdController = TextEditingController(text: '1');
+  final nameController = TextEditingController();
+  final descriptionController = TextEditingController();
+  final originalPriceController = TextEditingController();
+  final discountedPriceController = TextEditingController();
 
   String selectedCategory = 'Vegetables';
-  double stockValue = 14;
-  TimeOfDay fromTime = const TimeOfDay(hour: 17, minute: 0);
-  TimeOfDay untilTime = const TimeOfDay(hour: 20, minute: 0);
-  bool _isSubmitting = false;
-  final ApiClient _apiClient = ApiClient();
+  double stockValue = 10;
+  DateTime expiryDate = DateTime.now().add(const Duration(days: 1));
+  bool isActive = true;
+  bool isSubmitting = false;
 
   @override
   void dispose() {
-    titleController.dispose();
+    restaurantIdController.dispose();
+    nameController.dispose();
     descriptionController.dispose();
-    priceController.dispose();
+    originalPriceController.dispose();
+    discountedPriceController.dispose();
     super.dispose();
   }
 
-  String _formatTime(TimeOfDay time) {
-    final h = time.hour.toString().padLeft(2, '0');
-    final m = time.minute.toString().padLeft(2, '0');
-    return '$h:$m:00';
-  }
-
-  Future<void> _saveDraft() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Taslak kaydedildi (yerel).')),
-    );
-  }
-
-  Future<void> _listProduct() async {
-    final name = titleController.text.trim();
-    final description = descriptionController.text.trim();
-    final priceText = priceController.text.trim();
-
-    if (name.isEmpty || description.isEmpty || priceText.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lutfen tum alanlari doldurun.')),
-      );
-      return;
-    }
-
-    final price = double.tryParse(priceText);
-    if (price == null || price <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gecerli bir fiyat girin.')),
-      );
-      return;
-    }
-
-    setState(() => _isSubmitting = true);
-    try {
-      await _apiClient.createProduct(
-        name: name,
-        description: description,
-        originalPrice: price,
-        discountedPrice: price * 0.6,
-        category: selectedCategory,
-        stock: stockValue.round(),
-        collectionFrom: _formatTime(fromTime),
-        collectionUntil: _formatTime(untilTime),
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Urun basariyla listelendi!')),
-      );
-      Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
-  }
-
-  Future<void> pickTime({required bool isFrom}) async {
-    final picked = await showTimePicker(
+  Future<void> _pickExpiryDate() async {
+    final picked = await showDatePicker(
       context: context,
-      initialTime: isFrom ? fromTime : untilTime,
+      initialDate: expiryDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
     );
 
     if (picked != null) {
-      setState(() {
-        if (isFrom) {
-          fromTime = picked;
-        } else {
-          untilTime = picked;
-        }
-      });
+      setState(() => expiryDate = picked);
     }
+  }
+
+  Future<void> _listProduct() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final restaurantId = int.tryParse(restaurantIdController.text.trim());
+    final originalPrice = double.tryParse(originalPriceController.text.trim());
+    final discountedPrice = double.tryParse(discountedPriceController.text.trim());
+
+    if (restaurantId == null || restaurantId <= 0) {
+      _showMessage('Geçerli bir Restaurant ID girin.');
+      return;
+    }
+
+    if (originalPrice == null || originalPrice <= 0) {
+      _showMessage('Geçerli bir orijinal fiyat girin.');
+      return;
+    }
+
+    if (discountedPrice == null || discountedPrice <= 0) {
+      _showMessage('Geçerli bir indirimli fiyat girin.');
+      return;
+    }
+
+    if (discountedPrice > originalPrice) {
+      _showMessage('İndirimli fiyat orijinal fiyattan büyük olamaz.');
+      return;
+    }
+
+    setState(() => isSubmitting = true);
+
+    try {
+      await _apiClient.createProduct(
+        restaurantId: restaurantId,
+        name: nameController.text.trim(),
+        description: descriptionController.text.trim(),
+        originalPrice: originalPrice,
+        discountedPrice: discountedPrice,
+        category: selectedCategory,
+        stock: stockValue.round(),
+        expiryDate: expiryDate,
+        isActive: isActive,
+      );
+
+      if (!mounted) return;
+
+      _showMessage('Ürün başarıyla eklendi.');
+      Navigator.pop(context, true);
+    } catch (e) {
+      _showMessage(e.toString().replaceAll('ApiException: ', ''));
+    } finally {
+      if (mounted) setState(() => isSubmitting = false);
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String hint,
+    IconData? icon,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: icon != null ? Icon(icon, color: textSoft) : null,
+      filled: true,
+      fillColor: inputBg,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: primary, width: 1.4),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    const background = Color(0xFFF8FAF8);
-
     return Scaffold(
       backgroundColor: background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
             children: [
-              const ProductListingHeader(),
-              const SizedBox(height: 24),
-              ProductDetailsForm(
-                titleController: titleController,
-                descriptionController: descriptionController,
-                priceController: priceController,
-                selectedCategory: selectedCategory,
-                onCategoryChanged: (value) {
-                  setState(() {
-                    selectedCategory = value;
-                  });
-                },
+              _buildHeader(),
+              const SizedBox(height: 22),
+              _buildProgress(),
+              const SizedBox(height: 28),
+              _buildVisualSection(),
+              const SizedBox(height: 28),
+              _buildProductDetails(),
+              const SizedBox(height: 28),
+              _buildStockAndExpiry(),
+              const SizedBox(height: 28),
+              _buildActionButtons(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: primary),
+        ),
+        Expanded(
+          child: Text(
+            'Yeni Ürün Ekle',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: textDark,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: primary.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            'Satıcı',
+            style: GoogleFonts.manrope(
+              color: primary,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgress() {
+    return Row(
+      children: [
+        Expanded(child: _progressLine(true)),
+        const SizedBox(width: 6),
+        Expanded(child: _progressLine(true)),
+        const SizedBox(width: 6),
+        Expanded(child: _progressLine(true)),
+      ],
+    );
+  }
+
+  Widget _progressLine(bool active) {
+    return Container(
+      height: 5,
+      decoration: BoxDecoration(
+        color: active ? primary : Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(999),
+      ),
+    );
+  }
+
+  Widget _buildVisualSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('Ürün Görseli'),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: _photoBox(
+                icon: Icons.fastfood,
+                text: 'Önizleme',
               ),
-              const SizedBox(height: 24),
-              StockCollectionSection(
-                stockValue: stockValue,
-                fromTime: fromTime,
-                untilTime: untilTime,
-                onStockChanged: (value) {
-                  setState(() {
-                    stockValue = value;
-                  });
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _photoBox(
+                icon: Icons.add_a_photo_outlined,
+                text: 'Fotoğraf Ekle',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _photoBox(
+                icon: Icons.image_outlined,
+                text: 'Boş',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Not: Backend image upload endpoint’i olmadığı için fotoğraf şimdilik görsel alan olarak duruyor.',
+          style: GoogleFonts.manrope(
+            fontSize: 11,
+            color: textSoft,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _photoBox({
+    required IconData icon,
+    required String text,
+  }) {
+    return Container(
+      height: 105,
+      decoration: BoxDecoration(
+        color: surfaceLow,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: primary),
+          const SizedBox(height: 6),
+          Text(
+            text,
+            style: GoogleFonts.manrope(
+              fontSize: 11,
+              color: textSoft,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductDetails() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('Ürün Bilgileri'),
+        const SizedBox(height: 16),
+
+        _label('Restaurant ID'),
+        TextFormField(
+          controller: restaurantIdController,
+          keyboardType: TextInputType.number,
+          decoration: _inputDecoration(
+            hint: 'Örn: 1',
+            icon: Icons.storefront,
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Restaurant ID zorunludur';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+
+        _label('Ürün Adı'),
+        TextFormField(
+          controller: nameController,
+          decoration: _inputDecoration(
+            hint: 'Örn: Organik Sebze Kutusu',
+            icon: Icons.shopping_bag_outlined,
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Ürün adı zorunludur';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+
+        _label('Açıklama'),
+        TextFormField(
+          controller: descriptionController,
+          maxLines: 4,
+          decoration: _inputDecoration(
+            hint: 'Ürünün tazelik, içerik veya teslim bilgilerini yazın.',
+            icon: Icons.description_outlined,
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Açıklama zorunludur';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+
+        _label('Kategori'),
+        DropdownButtonFormField<String>(
+          initialValue: selectedCategory,
+          decoration: _inputDecoration(
+            hint: 'Kategori seçin',
+            icon: Icons.category_outlined,
+          ),
+          items: const [
+            DropdownMenuItem(value: 'Vegetables', child: Text('Vegetables')),
+            DropdownMenuItem(value: 'Bakery', child: Text('Bakery')),
+            DropdownMenuItem(value: 'Dairy', child: Text('Dairy')),
+            DropdownMenuItem(value: 'Fruit', child: Text('Fruit')),
+            DropdownMenuItem(value: 'Meal', child: Text('Meal')),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              setState(() => selectedCategory = value);
+            }
+          },
+        ),
+        const SizedBox(height: 16),
+
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _label('Orijinal Fiyat'),
+                  TextFormField(
+                    controller: originalPriceController,
+                    keyboardType: TextInputType.number,
+                    decoration: _inputDecoration(
+                      hint: '100',
+                      icon: Icons.attach_money,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Zorunlu';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _label('İndirimli Fiyat'),
+                  TextFormField(
+                    controller: discountedPriceController,
+                    keyboardType: TextInputType.number,
+                    decoration: _inputDecoration(
+                      hint: '60',
+                      icon: Icons.local_offer_outlined,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Zorunlu';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStockAndExpiry() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('Stok ve Son Kullanma'),
+        const SizedBox(height: 16),
+
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: surfaceLow,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Stok',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: textDark,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: primary,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${stockValue.round()} adet',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Slider(
+                value: stockValue,
+                min: 1,
+                max: 50,
+                activeColor: primary,
+                inactiveColor: Colors.grey.shade300,
+                onChanged: (value) {
+                  setState(() => stockValue = value);
                 },
-                onPickFrom: () => pickTime(isFrom: true),
-                onPickUntil: () => pickTime(isFrom: false),
-                onSaveDraft: _saveDraft,
-                onListProduct: _listProduct,
-                isSubmitting: _isSubmitting,
               ),
             ],
           ),
+        ),
+
+        const SizedBox(height: 16),
+
+        ListTile(
+          tileColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          leading: const Icon(Icons.calendar_today, color: primary),
+          title: const Text('Son Kullanma Tarihi'),
+          subtitle: Text(
+            '${expiryDate.day}.${expiryDate.month}.${expiryDate.year}',
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: _pickExpiryDate,
+        ),
+
+        const SizedBox(height: 12),
+
+        SwitchListTile(
+          value: isActive,
+          activeThumbColor: primary,
+activeTrackColor: primary.withValues(alpha: 0.35),
+          tileColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text('Ürün Aktif Olsun'),
+          subtitle: const Text('Aktif ürünler müşteriler tarafından görüntülenir.'),
+          onChanged: (value) {
+            setState(() => isActive = value);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 54,
+            child: OutlinedButton(
+              onPressed: isSubmitting ? null : () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: textDark,
+                side: BorderSide(color: Colors.grey.shade300),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              child: const Text('Vazgeç'),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 2,
+          child: SizedBox(
+            height: 54,
+            child: ElevatedButton.icon(
+              onPressed: isSubmitting ? null : _listProduct,
+              icon: isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.rocket_launch),
+              label: Text(isSubmitting ? 'Ekleniyor...' : 'Ürünü Yayınla'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _sectionTitle(String text) {
+    return Text(
+      text,
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
+        color: textDark,
+      ),
+    );
+  }
+
+  Widget _label(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        text,
+        style: GoogleFonts.manrope(
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          color: textDark,
         ),
       ),
     );
