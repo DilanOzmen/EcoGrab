@@ -6,6 +6,7 @@ import '../models/customer_order.dart';
 import '../models/product.dart';
 import '../models/restaurant.dart';
 import '../models/restaurant_detail.dart';
+import '../models/app_notification.dart';
 
 class ApiClient {
   static const String baseUrl = 'http://localhost:5141';
@@ -20,7 +21,9 @@ class ApiClient {
     );
 
     if (response.statusCode != 200) {
-      throw ApiException(_extractErrorMessage(response.body, 'Giris basarisiz.'));
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Giris basarisiz.'),
+      );
     }
 
     return AuthResponse.fromJson(jsonDecode(response.body));
@@ -46,7 +49,9 @@ class ApiClient {
     );
 
     if (response.statusCode != 200) {
-      throw ApiException(_extractErrorMessage(response.body, 'Kayit basarisiz.'));
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Kayit basarisiz.'),
+      );
     }
 
     return AuthResponse.fromJson(jsonDecode(response.body));
@@ -74,12 +79,17 @@ class ApiClient {
     }
 
     final list = jsonDecode(response.body) as List<dynamic>;
-    return list.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => Product.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   // ── Restaurants ───────────────────────────────────────────────────────────
 
-  Future<List<Restaurant>> getRestaurants({String? search, String? city}) async {
+  Future<List<Restaurant>> getRestaurants({
+    String? search,
+    String? city,
+  }) async {
     final uri = Uri.parse('$baseUrl/api/customer/restaurants').replace(
       queryParameters: {
         if (search != null) 'search': search,
@@ -103,8 +113,7 @@ class ApiClient {
     required double longitude,
     double radiusKm = 5,
   }) async {
-    final uri =
-        Uri.parse('$baseUrl/api/customer/restaurants/nearby').replace(
+    final uri = Uri.parse('$baseUrl/api/customer/restaurants/nearby').replace(
       queryParameters: {
         'latitude': latitude.toString(),
         'longitude': longitude.toString(),
@@ -148,11 +157,15 @@ class ApiClient {
       throw ApiException('Restoran detaylari yuklenemedi.');
     }
 
-    return RestaurantDetail.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    return RestaurantDetail.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   Future<List<Product>> getProductsByRestaurant(int restaurantId) async {
-    final uri = Uri.parse('$baseUrl/api/customer/restaurants/$restaurantId/products');
+    final uri = Uri.parse(
+      '$baseUrl/api/customer/restaurants/$restaurantId/products',
+    );
 
     final response = await http.get(uri);
     if (response.statusCode != 200) {
@@ -160,7 +173,9 @@ class ApiClient {
     }
 
     final list = jsonDecode(response.body) as List<dynamic>;
-    return list.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => Product.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<void> reserveProduct({
@@ -170,56 +185,55 @@ class ApiClient {
     final response = await http.post(
       Uri.parse('$baseUrl/api/customer/orders/reserve'),
       headers: _authHeaders(),
-      body: jsonEncode({
-        'ProductId': productId,
-        'Quantity': quantity,
-      }),
+      body: jsonEncode({'ProductId': productId, 'Quantity': quantity}),
     );
 
     if (response.statusCode != 200) {
-      throw ApiException(_extractErrorMessage(response.body, 'Rezervasyon basarisiz.'));
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Rezervasyon basarisiz.'),
+      );
     }
   }
 
   // -- Seller Products
 
- Future<int> createProduct({
-  required int restaurantId,
-  required String name,
-  required String description,
-  required double originalPrice,
-  required double discountedPrice,
-  required String category,
-  required int stock,
-  required DateTime expiryDate,
-  required bool isActive,
-}) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/api/seller/products'),
-    headers: _authHeaders(),
-    body: jsonEncode({
-      'restaurantId': restaurantId,
-      'category': category,
-      'name': name,
-      'description': description,
-      'originalPrice': originalPrice,
-      'discountedPrice': discountedPrice,
-      'stock': stock,
-      'expiryDate': expiryDate.toIso8601String(),
-      'isActive': isActive,
-    }),
-  );
-
-  if (response.statusCode != 201 && response.statusCode != 200) {
-    throw ApiException(
-      _extractErrorMessage(response.body, 'Urun olusturma basarisiz.'),
+  Future<int> createProduct({
+    required int restaurantId,
+    required String name,
+    required String description,
+    required double originalPrice,
+    required double discountedPrice,
+    required String category,
+    required int stock,
+    required DateTime expiryDate,
+    required bool isActive,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/seller/products'),
+      headers: _authHeaders(),
+      body: jsonEncode({
+        'restaurantId': restaurantId,
+        'category': category,
+        'name': name,
+        'description': description,
+        'originalPrice': originalPrice,
+        'discountedPrice': discountedPrice,
+        'stock': stock,
+        'expiryDate': expiryDate.toIso8601String(),
+        'isActive': isActive,
+      }),
     );
-  }
 
-  final responseJson = jsonDecode(response.body) as Map<String, dynamic>;
-  return responseJson['id'] ?? 0;
-}
-    // ── User Profile ─────────────────────────────────────────────────────────
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Urun olusturma basarisiz.'),
+      );
+    }
+
+    final responseJson = jsonDecode(response.body) as Map<String, dynamic>;
+    return responseJson['id'] ?? 0;
+  }
+  // ── User Profile ─────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> getMe() async {
     final response = await http.get(
@@ -243,10 +257,7 @@ class ApiClient {
     final response = await http.put(
       Uri.parse('$baseUrl/api/users/me'),
       headers: _authHeaders(),
-      body: jsonEncode({
-        'fullName': fullName,
-        'phone': phone,
-      }),
+      body: jsonEncode({'fullName': fullName, 'phone': phone}),
     );
 
     if (response.statusCode != 204) {
@@ -256,18 +267,53 @@ class ApiClient {
     }
   }
 
+  Future<List<AppNotification>> getMyNotifications() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/users/me/notifications'),
+      headers: _authHeaders(),
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Bildirimler yuklenemedi.'),
+      );
+    }
+
+    final list = jsonDecode(response.body) as List<dynamic>;
+    return list
+        .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> markNotificationAsRead(int notificationId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/users/me/notifications/$notificationId/read'),
+      headers: _authHeaders(),
+    );
+
+    if (response.statusCode != 204) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Bildirim guncellenemedi.'),
+      );
+    }
+  }
+
   // ── Orders ────────────────────────────────────────────────────────────────
 
   Future<List<CustomerOrder>> getMyOrders({bool onlyActive = false}) async {
-    final uri = Uri.parse('$baseUrl/api/customer/orders/my').replace(
-      queryParameters: {'onlyActive': onlyActive.toString()},
-    );
+    final uri = Uri.parse(
+      '$baseUrl/api/customer/orders/my',
+    ).replace(queryParameters: {'onlyActive': onlyActive.toString()});
     final response = await http.get(uri, headers: _authHeaders());
     if (response.statusCode != 200) {
-      throw ApiException(_extractErrorMessage(response.body, 'Siparisler yuklenemedi.'));
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Siparisler yuklenemedi.'),
+      );
     }
     final list = jsonDecode(response.body) as List<dynamic>;
-    return list.map((e) => CustomerOrder.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => CustomerOrder.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<List<CustomerOrder>> getMyReservations() async {
@@ -276,10 +322,14 @@ class ApiClient {
       headers: _authHeaders(),
     );
     if (response.statusCode != 200) {
-      throw ApiException(_extractErrorMessage(response.body, 'Rezervasyonlar yuklenemedi.'));
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Rezervasyonlar yuklenemedi.'),
+      );
     }
     final list = jsonDecode(response.body) as List<dynamic>;
-    return list.map((e) => CustomerOrder.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => CustomerOrder.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<CustomerOrder> getOrderDetail(int orderId) async {
@@ -293,7 +343,9 @@ class ApiClient {
     if (response.statusCode != 200) {
       throw ApiException('Siparis detayi yuklenemedi.');
     }
-    return CustomerOrder.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    return CustomerOrder.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   Future<void> cancelOrder(int orderId) async {
@@ -302,7 +354,9 @@ class ApiClient {
       headers: _authHeaders(),
     );
     if (response.statusCode != 200) {
-      throw ApiException(_extractErrorMessage(response.body, 'Iptal basarisiz.'));
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Iptal basarisiz.'),
+      );
     }
   }
 
@@ -339,7 +393,9 @@ class ApiClient {
           .where((e) => e.isNotEmpty)
           .toList();
       if (details.isNotEmpty) {
-        final prefix = (message != null && message.isNotEmpty) ? '$message\n' : '';
+        final prefix = (message != null && message.isNotEmpty)
+            ? '$message\n'
+            : '';
         return '$prefix- ${details.join('\n- ')}';
       }
     }

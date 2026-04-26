@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:food_waste_app/core/app_state.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
+import 'package:food_waste_app/screens/notifications_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final ApiClient apiClient;
@@ -83,9 +84,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _initials(String nameOrEmail) {
@@ -120,7 +121,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
 
         final data = snapshot.data ?? {};
-        final fullName = data['fullName']?.toString() ??
+        final fullName =
+            data['fullName']?.toString() ??
             AppState.currentUser?.fullName ??
             'Kullanıcı';
         final email =
@@ -161,7 +163,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: 'Bildirimlerim',
                     subtitle: 'Rezervasyon ve sipariş güncellemeleri',
                     onTap: () {
-                      _showMessage('Bildirim ekranı sonraki adımda bağlanacak.');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              NotificationsScreen(apiClient: widget.apiClient),
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 16),
@@ -236,15 +244,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 4),
                 Text(
                   email,
-                  style: GoogleFonts.manrope(
-                    fontSize: 13,
-                    color: textSoft,
-                  ),
+                  style: GoogleFonts.manrope(fontSize: 13, color: textSoft),
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: primary.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(999),
@@ -265,10 +272,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
- 
-
-  
 
   Widget _infoCard(String email, String phone, String role) {
     return Container(
