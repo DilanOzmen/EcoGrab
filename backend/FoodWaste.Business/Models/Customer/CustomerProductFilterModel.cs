@@ -3,6 +3,7 @@ namespace FoodWaste.Business.Models.Customer;
 public sealed record CustomerProductFilterModel(
     string? Search,
     string? Category,
+    string? HomeCategory,
     decimal? MinPrice,
     decimal? MaxPrice,
     decimal? MinDiscountPercent,

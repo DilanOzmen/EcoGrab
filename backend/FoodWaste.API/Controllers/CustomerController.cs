@@ -20,9 +20,10 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
     public async Task<IActionResult> GetRestaurants(
         [FromQuery] string? city,
         [FromQuery] string? search,
+        [FromQuery] string? homeCategory,
         CancellationToken cancellationToken)
     {
-        var restaurants = await customerService.GetRestaurantsAsync(city, search, cancellationToken);
+        var restaurants = await customerService.GetRestaurantsAsync(city, search, homeCategory, cancellationToken);
         return Ok(restaurants);
     }
 
@@ -32,6 +33,7 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
     public async Task<IActionResult> GetProducts(
         [FromQuery] string? search,
         [FromQuery] string? category,
+        [FromQuery] string? homeCategory,
         [FromQuery] decimal? minPrice,
         [FromQuery] decimal? maxPrice,
         [FromQuery] decimal? minDiscountPercent,
@@ -40,7 +42,7 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
         [FromQuery] double? radiusKm,
         CancellationToken cancellationToken)
     {
-        var filter = new CustomerProductFilterModel(search, category, minPrice, maxPrice, minDiscountPercent, latitude, longitude, radiusKm);
+        var filter = new CustomerProductFilterModel(search, category, homeCategory, minPrice, maxPrice, minDiscountPercent, latitude, longitude, radiusKm);
         var products = await customerService.GetProductsAsync(filter, cancellationToken);
         return Ok(products);
     }

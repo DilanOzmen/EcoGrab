@@ -4,7 +4,7 @@ namespace FoodWaste.Business.Abstractions;
 
 public interface ICustomerService
 {
-    Task<IReadOnlyList<NearbyRestaurantDto>> GetRestaurantsAsync(string? city, string? search, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<NearbyRestaurantDto>> GetRestaurantsAsync(string? city, string? search, string? homeCategory, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CustomerProductDto>> GetProductsAsync(CustomerProductFilterModel filter, CancellationToken cancellationToken = default);
     Task<CustomerProductDto?> GetProductDetailAsync(int productId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CustomerProductDto>> GetProductsByRestaurantAsync(int restaurantId, CancellationToken cancellationToken = default);
