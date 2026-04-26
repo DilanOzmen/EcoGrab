@@ -51,10 +51,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
       _apiClient.getMyReservations(),
     ]);
 
-    final merged = <CustomerOrder>[
-      ...results[0],
-      ...results[1],
-    ];
+    final merged = <CustomerOrder>[...results[0], ...results[1]];
 
     final unique = <int, CustomerOrder>{};
     for (final order in merged) {
@@ -98,19 +95,15 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => RestaurantDetailScreen(
-            restaurant: detail,
-            apiClient: _apiClient,
-          ),
+          builder: (_) =>
+              RestaurantDetailScreen(restaurant: detail, apiClient: _apiClient),
         ),
       );
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll('ApiException: ', '')),
-        ),
+        SnackBar(content: Text(e.toString().replaceAll('ApiException: ', ''))),
       );
     }
   }
@@ -146,9 +139,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF1B4332),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFF1B4332)),
             );
           }
 
@@ -233,9 +224,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
                       child: Text('Gösterilecek restoran bulunamadı.'),
                     )
                   else
-                    ...data.restaurants.take(5).map(
-                          (restaurant) => _buildRestaurantCard(restaurant),
-                        ),
+                    ...data.restaurants
+                        .take(5)
+                        .map((restaurant) => _buildRestaurantCard(restaurant)),
 
                   const Padding(
                     padding: EdgeInsets.fromLTRB(20, 30, 20, 10),
@@ -249,9 +240,10 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
                     ),
                   ),
 
-                  ...data.products.skip(1).take(6).map(
-                        (product) => _buildSimpleProductCard(product),
-                      ),
+                  ...data.products
+                      .skip(1)
+                      .take(6)
+                      .map((product) => _buildSimpleProductCard(product)),
 
                   const SizedBox(height: 40),
                 ],
@@ -271,11 +263,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
       child: Row(
         children: [
-          const Icon(
-            Icons.location_on,
-            color: Color(0xFF2D6A4F),
-            size: 22,
-          ),
+          const Icon(Icons.location_on, color: Color(0xFF2D6A4F), size: 22),
           const SizedBox(width: 8),
           const Text(
             'Kadıköy, İstanbul',
@@ -314,18 +302,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
             label: 'Market',
             isSelected: true,
           ),
-          CategoryChip(
-            icon: Icons.coffee,
-            label: 'Kafe',
-          ),
-          CategoryChip(
-            icon: Icons.bakery_dining,
-            label: 'Fırın',
-          ),
-          CategoryChip(
-            icon: Icons.local_drink,
-            label: 'İçecek',
-          ),
+          CategoryChip(icon: Icons.coffee, label: 'Kafe'),
+          CategoryChip(icon: Icons.bakery_dining, label: 'Fırın'),
+          CategoryChip(icon: Icons.local_drink, label: 'İçecek'),
         ],
       ),
     );
@@ -341,10 +320,8 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
         final changed = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
-            builder: (_) => ProductDetailScreen(
-              product: product,
-              apiClient: _apiClient,
-            ),
+            builder: (_) =>
+                ProductDetailScreen(product: product, apiClient: _apiClient),
           ),
         );
 
@@ -370,10 +347,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
                 borderRadius: BorderRadius.circular(28),
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withAlpha(160),
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.black.withAlpha(160), Colors.transparent],
                 ),
               ),
             ),
@@ -416,10 +390,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
                   ),
                   Text(
                     '${product.restaurantName} • Stok: ${product.stock}',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                    ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ],
               ),
@@ -479,18 +450,12 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
                     '${restaurant.city} • ${restaurant.address}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: Color(0xFF1B4332),
-            ),
+            const Icon(Icons.chevron_right, color: Color(0xFF1B4332)),
           ],
         ),
       ),
@@ -503,10 +468,8 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
         final changed = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
-            builder: (_) => ProductDetailScreen(
-              product: product,
-              apiClient: _apiClient,
-            ),
+            builder: (_) =>
+                ProductDetailScreen(product: product, apiClient: _apiClient),
           ),
         );
 
@@ -537,10 +500,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
                 color: const Color(0xFFF3F5F7),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: const Icon(
-                Icons.fastfood,
-                color: Color(0xFF1B4332),
-              ),
+              child: const Icon(Icons.fastfood, color: Color(0xFF1B4332)),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -557,10 +517,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
                   const SizedBox(height: 5),
                   Text(
                     '${product.restaurantName} • Stok: ${product.stock}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
                 ],
               ),
@@ -607,9 +564,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
               children: const [
                 SizedBox(height: 220),
                 Center(
-                  child: Text(
-                    'Henüz sipariş veya rezervasyon bulunmuyor.',
-                  ),
+                  child: Text('Henüz sipariş veya rezervasyon bulunmuyor.'),
                 ),
               ],
             ),
@@ -624,7 +579,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
             itemCount: orders.length,
             itemBuilder: (context, index) {
               final order = orders[index];
-              final itemNames = order.items.map((i) => i.productName).join(', ');
+              final itemNames = order.items
+                  .map((i) => i.productName)
+                  .join(', ');
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 14),
@@ -641,8 +598,8 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
                   ],
                 ),
                 child: InkWell(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final changed = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
                         builder: (_) => OrderTrackingScreen(
@@ -651,6 +608,10 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
                         ),
                       ),
                     );
+
+                    if (changed == true && mounted) {
+                      _refreshOrders();
+                    }
                   },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -818,11 +779,7 @@ class CategoryChip extends StatelessWidget {
                   : const Color(0xFFF3F5F7),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF1B4332),
-              size: 26,
-            ),
+            child: Icon(icon, color: const Color(0xFF1B4332), size: 26),
           ),
           const SizedBox(height: 8),
           Text(
@@ -842,8 +799,5 @@ class _HomeData {
   final List<Product> products;
   final List<Restaurant> restaurants;
 
-  const _HomeData({
-    required this.products,
-    required this.restaurants,
-  });
+  const _HomeData({required this.products, required this.restaurants});
 }

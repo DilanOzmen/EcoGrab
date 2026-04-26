@@ -340,9 +340,10 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
         var order = await dbContext.Orders
             .Include(x => x.Items)
                 .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p!.Restaurant)
             .FirstOrDefaultAsync(x => x.Id == orderId && x.UserId == userId && !x.IsDeleted, cancellationToken);
 
-        if (order is null || order.Status != OrderStatus.Pending)
+        if (order is null || (order.Status != OrderStatus.Pending && order.Status != OrderStatus.Confirmed))
         {
             return null;
         }
@@ -367,7 +368,7 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        await notificationService.CreateAsync(userId, "ReservationCancelled", "Rezervasyon iptal edildi", $"#{order.Id} nolu rezervasyonunuz iptal edildi.", cancellationToken);
+        await notificationService.CreateAsync(userId, "OrderCancelled", "Siparis iptal edildi", $"#{order.Id} nolu siparisiniz iptal edildi.", cancellationToken);
 
         var sellerUserIds = order.Items
             .Where(x => x.Product?.Restaurant?.OwnerUserId != null)
@@ -377,7 +378,7 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
 
         foreach (var sellerUserId in sellerUserIds)
         {
-            await notificationService.CreateAsync(sellerUserId, "ReservationCancelled", "Rezervasyon iptali", $"#{order.Id} nolu rezervasyon iptal edildi.", cancellationToken);
+            await notificationService.CreateAsync(sellerUserId, "OrderCancelled", "Siparis iptali", $"#{order.Id} nolu siparis iptal edildi.", cancellationToken);
         }
 
         return new CustomerOrderDto(

@@ -23,6 +23,7 @@ class OrderTrackingScreen extends StatefulWidget {
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   late Future<CustomerOrder> _orderFuture;
+  bool _cancelLoading = false;
 
   @override
   void initState() {
@@ -66,6 +67,36 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     ];
   }
 
+  bool _canCancel(String status) {
+    final normalized = status.toLowerCase();
+    return normalized == 'pending' || normalized == 'confirmed';
+  }
+
+  Future<void> _cancelOrder() async {
+    setState(() => _cancelLoading = true);
+    try {
+      await widget.apiClient.cancelOrder(widget.orderId);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Siparis basariyla iptal edildi.')),
+      );
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('ApiException: ', ''))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _cancelLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,7 +119,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
           final order = snapshot.data!;
           final steps = _buildSteps(order.status);
-          final itemSummary = order.items.map((i) => '${i.productName} x${i.quantity}').join(', ');
+          final itemSummary = order.items
+              .map((i) => '${i.productName} x${i.quantity}')
+              .join(', ');
+          final canCancel = _canCancel(order.status);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -123,6 +157,31 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     ),
                   ),
                 ),
+                if (canCancel) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _cancelLoading ? null : _cancelOrder,
+                      icon: _cancelLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.cancel_outlined),
+                      label: Text(
+                        _cancelLoading
+                            ? 'Iptal ediliyor...'
+                            : 'Siparisi Iptal Et',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 TrackingTimeline(steps: steps),
               ],
