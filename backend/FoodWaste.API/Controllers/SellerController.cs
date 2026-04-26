@@ -6,6 +6,9 @@ using FoodWaste.Business.Models.Seller;
 using FoodWaste.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace FoodWaste.API.Controllers;
 
