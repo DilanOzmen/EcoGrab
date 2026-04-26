@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../../core/app_state.dart';
 import '../models/auth_response.dart';
 import '../models/customer_order.dart';
@@ -7,9 +8,29 @@ import '../models/product.dart';
 import '../models/restaurant.dart';
 import '../models/restaurant_detail.dart';
 import '../models/app_notification.dart';
+import '../models/seller_product.dart';
+import '../models/seller_order.dart';
 
 class ApiClient {
-  static const String baseUrl = 'http://localhost:5141';
+  static String get baseUrl {
+    const override = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (override.isNotEmpty) {
+      return override;
+    }
+
+    if (kIsWeb) {
+      return 'http://localhost:5141';
+    }
+
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android => 'http://10.0.2.2:5141',
+      TargetPlatform.iOS => 'http://localhost:5141',
+      TargetPlatform.windows => 'http://localhost:5141',
+      TargetPlatform.macOS => 'http://localhost:5141',
+      TargetPlatform.linux => 'http://localhost:5141',
+      TargetPlatform.fuchsia => 'http://localhost:5141',
+    };
+  }
 
   // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -232,6 +253,105 @@ class ApiClient {
 
     final responseJson = jsonDecode(response.body) as Map<String, dynamic>;
     return responseJson['id'] ?? 0;
+  }
+
+  Future<List<SellerProduct>> getMySellerProducts() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/seller/products'),
+      headers: _authHeaders(),
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Satici urunleri yuklenemedi.'),
+      );
+    }
+
+    final list = jsonDecode(response.body) as List<dynamic>;
+    return list
+        .map((e) => SellerProduct.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> updateSellerProduct({
+    required int productId,
+    required String category,
+    required String name,
+    required String description,
+    required double originalPrice,
+    required double discountedPrice,
+    required int stock,
+    required DateTime expiryDate,
+    required bool isActive,
+  }) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/seller/products/$productId'),
+      headers: _authHeaders(),
+      body: jsonEncode({
+        'category': category,
+        'name': name,
+        'description': description,
+        'originalPrice': originalPrice,
+        'discountedPrice': discountedPrice,
+        'stock': stock,
+        'expiryDate': expiryDate.toIso8601String(),
+        'isActive': isActive,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Urun guncellenemedi.'),
+      );
+    }
+  }
+
+  Future<void> deleteSellerProduct(int productId) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/seller/products/$productId'),
+      headers: _authHeaders(),
+    );
+
+    if (response.statusCode != 204) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Urun silinemedi.'),
+      );
+    }
+  }
+
+  Future<List<SellerOrder>> getSellerOrders({bool onlyActive = false}) async {
+    final uri = Uri.parse(
+      '$baseUrl/api/seller/orders',
+    ).replace(queryParameters: {'onlyActive': onlyActive.toString()});
+    final response = await http.get(uri, headers: _authHeaders());
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Satici siparisleri yuklenemedi.'),
+      );
+    }
+
+    final list = jsonDecode(response.body) as List<dynamic>;
+    return list
+        .map((e) => SellerOrder.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> updateSellerOrderStatus({
+    required int orderId,
+    required String status,
+  }) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/seller/orders/$orderId/status'),
+      headers: _authHeaders(),
+      body: jsonEncode({'status': status}),
+    );
+
+    if (response.statusCode != 204) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Siparis durumu guncellenemedi.'),
+      );
+    }
   }
   // ── User Profile ─────────────────────────────────────────────────────────
 

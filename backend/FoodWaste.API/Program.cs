@@ -58,7 +58,40 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowDevelopment", policy =>
     {
         policy
-            .SetIsOriginAllowed(origin => origin.StartsWith("http://localhost") || origin.StartsWith("http://127.0.0.1"))
+            .SetIsOriginAllowed(origin =>
+            {
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                {
+                    return false;
+                }
+
+                if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+                {
+                    return false;
+                }
+
+                var host = uri.Host;
+                return host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                       || host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("192.168.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("10.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.16.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.17.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.18.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.19.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.20.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.21.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.22.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.23.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.24.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.25.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.26.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.27.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.28.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.29.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.30.", StringComparison.OrdinalIgnoreCase)
+                       || host.StartsWith("172.31.", StringComparison.OrdinalIgnoreCase);
+            })
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();

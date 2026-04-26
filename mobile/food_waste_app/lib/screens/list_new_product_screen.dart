@@ -20,7 +20,7 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
   final _apiClient = ApiClient();
   final _formKey = GlobalKey<FormState>();
 
-  final restaurantIdController = TextEditingController(text: '1');
+  final restaurantIdController = TextEditingController();
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
   final originalPriceController = TextEditingController();
@@ -62,7 +62,9 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
     // 2. Sayısal verilerin parse edilmesi
     final restaurantId = int.tryParse(restaurantIdController.text.trim());
     final originalPrice = double.tryParse(originalPriceController.text.trim());
-    final discountedPrice = double.tryParse(discountedPriceController.text.trim());
+    final discountedPrice = double.tryParse(
+      discountedPriceController.text.trim(),
+    );
 
     // 3. Mantıksal kontroller
     if (restaurantId == null || restaurantId <= 0) {
@@ -110,17 +112,13 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
     }
   }
 
-
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  InputDecoration _inputDecoration({
-    required String hint,
-    IconData? icon,
-  }) {
+  InputDecoration _inputDecoration({required String hint, IconData? icon}) {
     return InputDecoration(
       hintText: hint,
       prefixIcon: icon != null ? Icon(icon, color: textSoft) : null,
@@ -237,10 +235,7 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
         Row(
           children: [
             Expanded(
-              child: _photoBox(
-                icon: Icons.fastfood,
-                text: 'Önizleme',
-              ),
+              child: _photoBox(icon: Icons.fastfood, text: 'Önizleme'),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -251,29 +246,20 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _photoBox(
-                icon: Icons.image_outlined,
-                text: 'Boş',
-              ),
+              child: _photoBox(icon: Icons.image_outlined, text: 'Boş'),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Text(
           'Not: Backend image upload endpoint’i olmadığı için fotoğraf şimdilik görsel alan olarak duruyor.',
-          style: GoogleFonts.manrope(
-            fontSize: 11,
-            color: textSoft,
-          ),
+          style: GoogleFonts.manrope(fontSize: 11, color: textSoft),
         ),
       ],
     );
   }
 
-  Widget _photoBox({
-    required IconData icon,
-    required String text,
-  }) {
+  Widget _photoBox({required IconData icon, required String text}) {
     return Container(
       height: 105,
       decoration: BoxDecoration(
@@ -310,10 +296,7 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
         TextFormField(
           controller: restaurantIdController,
           keyboardType: TextInputType.number,
-          decoration: _inputDecoration(
-            hint: 'Örn: 1',
-            icon: Icons.storefront,
-          ),
+          decoration: _inputDecoration(hint: 'Orn: 1', icon: Icons.storefront),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return 'Restaurant ID zorunludur';
@@ -458,7 +441,10 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: primary,
                       borderRadius: BorderRadius.circular(999),
@@ -508,13 +494,15 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
         SwitchListTile(
           value: isActive,
           activeThumbColor: primary,
-activeTrackColor: primary.withValues(alpha: 0.35),
+          activeTrackColor: primary.withValues(alpha: 0.35),
           tileColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           title: const Text('Ürün Aktif Olsun'),
-          subtitle: const Text('Aktif ürünler müşteriler tarafından görüntülenir.'),
+          subtitle: const Text(
+            'Aktif ürünler müşteriler tarafından görüntülenir.',
+          ),
           onChanged: (value) {
             setState(() => isActive = value);
           },

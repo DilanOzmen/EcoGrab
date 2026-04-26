@@ -6,6 +6,7 @@ import 'package:food_waste_app/widgets/tracking_status_badge.dart';
 import 'package:food_waste_app/widgets/pickup_code_card.dart';
 import 'package:food_waste_app/widgets/tracking_timeline.dart';
 import 'package:food_waste_app/widgets/bottom_nav_bar.dart';
+import 'package:food_waste_app/screens/rescue_home_screen.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final int orderId;
@@ -97,11 +98,30 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
   }
 
+  void _onBottomNavTap(int index) {
+    if (index == 1) {
+      Navigator.pop(context, true);
+      return;
+    }
+
+    final targetIndex = index == 0 ? 0 : 3;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RescueHomeScreen(initialIndex: targetIndex),
+      ),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Siparis #${widget.orderId}')),
-      bottomNavigationBar: const BottomNavBar(),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: 1,
+        onTap: _onBottomNavTap,
+      ),
       body: FutureBuilder<CustomerOrder>(
         future: _orderFuture,
         builder: (context, snapshot) {

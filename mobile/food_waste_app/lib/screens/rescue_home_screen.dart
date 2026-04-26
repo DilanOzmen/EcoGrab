@@ -12,7 +12,9 @@ import 'profile_screen.dart';
 import 'restaurant_detail_screen.dart';
 
 class RescueHomeScreen extends StatefulWidget {
-  const RescueHomeScreen({super.key});
+  final int initialIndex;
+
+  const RescueHomeScreen({super.key, this.initialIndex = 0});
 
   @override
   State<RescueHomeScreen> createState() => _RescueHomeScreenState();
@@ -29,6 +31,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
     _homeFuture = _loadHomeData();
     _ordersFuture = _loadOrdersData();
   }
