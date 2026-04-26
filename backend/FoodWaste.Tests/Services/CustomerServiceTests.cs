@@ -57,8 +57,8 @@ public class CustomerServiceTests
         await dbContext.SaveChangesAsync();
 
         var service = new CustomerService(dbContext, new TestNotificationService());
-        var filter = new CustomerProductFilterModel(null, null, null, null, null, null, null, null);
-
+        var filter = new CustomerProductFilterModel(null, null, null, null, null, null, null, null, null);
+        
         var result = await service.GetProductsAsync(filter);
 
         Assert.Single(result);
