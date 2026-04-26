@@ -72,21 +72,43 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     return normalized == 'pending' || normalized == 'confirmed';
   }
 
-  Future<void> _cancelOrder() async {
+ Future<void> _cancelOrder() async {
+    // 1. Kullanıcıdan onay alalım
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Siparişi İptal Et'),
+        content: const Text('Bu siparişi iptal etmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false), // Hayır
+            child: const Text('Vazgeç', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true), // Evet
+            child: const Text('Evet, İptal Et', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    // Eğer kullanıcı onay vermediyse işlemi durdur
+    if (confirm != true) return;
+
+    // 2. Onay verdiyse iptal sürecini başlat
     setState(() => _cancelLoading = true);
     try {
       await widget.apiClient.cancelOrder(widget.orderId);
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Siparis basariyla iptal edildi.')),
+        const SnackBar(content: Text('Sipariş başarıyla iptal edildi.')),
       );
+      
+      // Önceki sayfaya dön (Liste yenilensin diye true gönderiyoruz)
       Navigator.pop(context, true);
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString().replaceAll('ApiException: ', ''))),
       );
