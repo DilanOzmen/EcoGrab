@@ -218,6 +218,38 @@ class ApiClient {
 
   // -- Seller Products
 
+  /// Yeni eklenen metod: Satıcının dükkan görselini yükler
+  Future<String> uploadProductImage(Uint8List bytes, String fileName) async {
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/api/seller/upload-image'),
+    );
+
+    request.files.add(http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: fileName,
+    ));
+
+    // Token varsa header ekleyelim (kodunda AllowAnonymous yapmıştık ama güvenlik iyidir)
+    final token = AppState.currentUser?.token ?? '';
+    if (token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['imageUrl']; // Backend'den gelen yol: /uploads/xxx.jpg
+    } else {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Gorsel yukleme basarisiz.'),
+      );
+    }
+  }
+
   Future<int> createProduct({
     required int restaurantId,
     required String name,
@@ -353,6 +385,7 @@ class ApiClient {
       );
     }
   }
+
   // ── User Profile ─────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> getMe() async {

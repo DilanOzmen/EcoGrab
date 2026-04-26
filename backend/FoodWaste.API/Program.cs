@@ -148,6 +148,7 @@ else
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseCors("AllowDevelopment");
 app.UseAuthentication();
+app.UseStaticFiles(); // Bu satır wwwroot içindeki dosyalara erişimi açar
 app.UseAuthorization();
 
 app.MapGet("/", () => Results.Ok(new

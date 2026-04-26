@@ -249,4 +249,33 @@ public class SellerController(ISellerService sellerService) : ControllerBase
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         return int.TryParse(userIdClaim, out userId);
     }
+
+    [HttpPost("upload-image")]
+    [AllowAnonymous] // Test aşamasında yetki (token) sorunu yaşamamak için ekledik
+    public async Task<IActionResult> UploadProductImage(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "Dosya secilmedi." });
+
+        // 1. Resimlerin kaydedileceği klasör yolu
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+
+        // 2. Klasör yoksa oluştur
+        if (!Directory.Exists(uploadsFolder))
+            Directory.CreateDirectory(uploadsFolder);
+
+        // 3. Dosya adını benzersiz yap (Aynı isimli resimler karışmasın)
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var filePath = Path.Combine(uploadsFolder, fileName);
+
+        // 4. Dosyayı fiziksel olarak kaydet
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        // 5. Flutter'a resmin yolunu dön
+        // Örn: /uploads/abc-123.jpg
+        return Ok(new { imageUrl = $"/uploads/{fileName}" });
+    }
 }

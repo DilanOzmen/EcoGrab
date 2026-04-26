@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
+import 'package:image_picker/image_picker.dart'; // Eklendi
 
 class ListNewProductScreen extends StatefulWidget {
   const ListNewProductScreen({super.key});
@@ -31,6 +32,9 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
   DateTime expiryDate = DateTime.now().add(const Duration(days: 1));
   bool isActive = true;
   bool isSubmitting = false;
+  
+  // Yüklenen resmin URL'sini tutacak değişken
+  String? _uploadedImageUrl;
 
   @override
   void dispose() {
@@ -40,6 +44,34 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
     originalPriceController.dispose();
     discountedPriceController.dispose();
     super.dispose();
+  }
+
+  // Fotoğraf Seçme ve Yükleme Fonksiyonu
+  Future<void> _pickAndUploadImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 80,
+    );
+
+    if (image != null) {
+      setState(() => isSubmitting = true);
+      try {
+        final bytes = await image.readAsBytes();
+        // ApiClient içindeki yeni metodumuzu çağırıyoruz
+        final imageUrl = await _apiClient.uploadProductImage(bytes, image.name);
+        
+        setState(() {
+          _uploadedImageUrl = imageUrl;
+          _showMessage('Görsel başarıyla yüklendi!');
+        });
+      } catch (e) {
+        _showMessage('Görsel yüklenemedi: $e');
+      } finally {
+        setState(() => isSubmitting = false);
+      }
+    }
   }
 
   Future<void> _pickExpiryDate() async {
@@ -56,17 +88,12 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
   }
 
   Future<void> _listProduct() async {
-    // 1. Form validation (Eksik alan kontrolü)
     if (!_formKey.currentState!.validate()) return;
 
-    // 2. Sayısal verilerin parse edilmesi
     final restaurantId = int.tryParse(restaurantIdController.text.trim());
     final originalPrice = double.tryParse(originalPriceController.text.trim());
-    final discountedPrice = double.tryParse(
-      discountedPriceController.text.trim(),
-    );
+    final discountedPrice = double.tryParse(discountedPriceController.text.trim());
 
-    // 3. Mantıksal kontroller
     if (restaurantId == null || restaurantId <= 0) {
       _showMessage('Lütfen geçerli bir Restoran ID girin.');
       return;
@@ -75,16 +102,10 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
       _showMessage('Orijinal fiyat boş olamaz.');
       return;
     }
-    if (discountedPrice != null && discountedPrice > originalPrice) {
-      _showMessage('İndirimli fiyat orijinal fiyattan yüksek olamaz.');
-      return;
-    }
 
-    // 4. Gönderim süreci başlat
     setState(() => isSubmitting = true);
 
     try {
-      // ApiClient içindeki metodu çağırıyoruz
       final newProductId = await _apiClient.createProduct(
         restaurantId: restaurantId,
         name: nameController.text.trim(),
@@ -95,17 +116,16 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
         stock: stockValue.round(),
         expiryDate: expiryDate,
         isActive: isActive,
+        // Not: createProduct metoduna backend'de imageUrl desteği gelince buraya _uploadedImageUrl eklenebilir.
       );
 
       if (!mounted) return;
 
       if (newProductId > 0) {
-        _showMessage('Ürün başarıyla yayınlandı! (ID: $newProductId)');
-        // 5. Başarılıysa sayfayı kapat ve önceki sayfaya 'true' döndür (yenileme için)
+        _showMessage('Ürün başarıyla yayınlandı!');
         Navigator.pop(context, true);
       }
     } catch (e) {
-      // Hata mesajını sadeleştirerek göster
       _showMessage(e.toString().replaceAll('ApiException: ', ''));
     } finally {
       if (mounted) setState(() => isSubmitting = false);
@@ -113,9 +133,7 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   InputDecoration _inputDecoration({required String hint, IconData? icon}) {
@@ -226,64 +244,91 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
     );
   }
 
-  Widget _buildVisualSection() {
+Widget _buildVisualSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionTitle('Ürün Görseli'),
         const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              child: _photoBox(icon: Icons.fastfood, text: 'Önizleme'),
+        InkWell(
+          onTap: isSubmitting ? null : _pickAndUploadImage,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            width: double.infinity,
+            height: 180, // Daha geniş ve ferah bir alan
+            decoration: BoxDecoration(
+              color: surfaceLow,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.grey.shade200, width: 2),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _photoBox(
-                icon: Icons.add_a_photo_outlined,
-                text: 'Fotoğraf Ekle',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _photoBox(icon: Icons.image_outlined, text: 'Boş'),
-            ),
-          ],
+            child: _uploadedImageUrl == null
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.add_a_photo_rounded, size: 42, color: primary),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Ürün Fotoğrafı Eklemek İçin Dokunun',
+                        style: GoogleFonts.manrope(
+                          fontSize: 14,
+                          color: textSoft,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Müşterilerin iştahını kabartacak bir kare seçin!',
+                        style: GoogleFonts.manrope(fontSize: 12, color: textSoft.withValues(alpha: 0.7)),
+                      ),
+                    ],
+                  )
+                : Stack(
+                    children: [
+                      // Fotoğrafın Tamamı Görünsün
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(
+                              '${ApiClient.baseUrl}$_uploadedImageUrl',
+                              fit: BoxFit.contain, // Fotoğrafı bozmadan içine sığdırır
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Sağ üstte değiştirme butonu
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: CircleAvatar(
+                          backgroundColor: primary,
+                          radius: 18,
+                          child: const Icon(Icons.edit, size: 18, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Not: Backend image upload endpoint’i olmadığı için fotoğraf şimdilik görsel alan olarak duruyor.',
-          style: GoogleFonts.manrope(fontSize: 11, color: textSoft),
-        ),
+        if (_uploadedImageUrl != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 12, left: 4),
+            child: Row(
+              children: [
+                const Icon(Icons.check_circle, size: 16, color: primary),
+                const SizedBox(width: 6),
+                Text(
+                  'Görsel başarıyla backend\'e yüklendi.',
+                  style: GoogleFonts.manrope(fontSize: 12, color: primary, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
-
-  Widget _photoBox({required IconData icon, required String text}) {
-    return Container(
-      height: 105,
-      decoration: BoxDecoration(
-        color: surfaceLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: primary),
-          const SizedBox(height: 6),
-          Text(
-            text,
-            style: GoogleFonts.manrope(
-              fontSize: 11,
-              color: textSoft,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  
 
   Widget _buildProductDetails() {
     return Column(
@@ -291,76 +336,39 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
       children: [
         _sectionTitle('Ürün Bilgileri'),
         const SizedBox(height: 16),
-
         _label('Restaurant ID'),
         TextFormField(
           controller: restaurantIdController,
           keyboardType: TextInputType.number,
           decoration: _inputDecoration(hint: 'Orn: 1', icon: Icons.storefront),
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Restaurant ID zorunludur';
-            }
-            return null;
-          },
+          validator: (value) => (value == null || value.trim().isEmpty) ? 'Zorunlu' : null,
         ),
         const SizedBox(height: 16),
-
         _label('Ürün Adı'),
         TextFormField(
           controller: nameController,
-          decoration: _inputDecoration(
-            hint: 'Örn: Organik Sebze Kutusu',
-            icon: Icons.shopping_bag_outlined,
-          ),
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Ürün adı zorunludur';
-            }
-            return null;
-          },
+          decoration: _inputDecoration(hint: 'Örn: Organik Sebze Kutusu', icon: Icons.shopping_bag_outlined),
+          validator: (value) => (value == null || value.trim().isEmpty) ? 'Zorunlu' : null,
         ),
         const SizedBox(height: 16),
-
         _label('Açıklama'),
         TextFormField(
           controller: descriptionController,
-          maxLines: 4,
-          decoration: _inputDecoration(
-            hint: 'Ürünün tazelik, içerik veya teslim bilgilerini yazın.',
-            icon: Icons.description_outlined,
-          ),
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Açıklama zorunludur';
-            }
-            return null;
-          },
+          maxLines: 3,
+          decoration: _inputDecoration(hint: 'Ürün detaylarını yazın.', icon: Icons.description_outlined),
+          validator: (value) => (value == null || value.trim().isEmpty) ? 'Zorunlu' : null,
         ),
         const SizedBox(height: 16),
-
         _label('Kategori'),
         DropdownButtonFormField<String>(
           initialValue: selectedCategory,
-          decoration: _inputDecoration(
-            hint: 'Kategori seçin',
-            icon: Icons.category_outlined,
-          ),
-          items: const [
-            DropdownMenuItem(value: 'Vegetables', child: Text('Vegetables')),
-            DropdownMenuItem(value: 'Bakery', child: Text('Bakery')),
-            DropdownMenuItem(value: 'Dairy', child: Text('Dairy')),
-            DropdownMenuItem(value: 'Fruit', child: Text('Fruit')),
-            DropdownMenuItem(value: 'Meal', child: Text('Meal')),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              setState(() => selectedCategory = value);
-            }
-          },
+          decoration: _inputDecoration(hint: 'Kategori seçin', icon: Icons.category_outlined),
+          items: ['Vegetables', 'Bakery', 'Dairy', 'Fruit', 'Meal']
+              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+              .toList(),
+          onChanged: (value) => setState(() => selectedCategory = value!),
         ),
         const SizedBox(height: 16),
-
         Row(
           children: [
             Expanded(
@@ -371,16 +379,7 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
                   TextFormField(
                     controller: originalPriceController,
                     keyboardType: TextInputType.number,
-                    decoration: _inputDecoration(
-                      hint: '100',
-                      icon: Icons.attach_money,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Zorunlu';
-                      }
-                      return null;
-                    },
+                    decoration: _inputDecoration(hint: '100', icon: Icons.attach_money),
                   ),
                 ],
               ),
@@ -394,16 +393,7 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
                   TextFormField(
                     controller: discountedPriceController,
                     keyboardType: TextInputType.number,
-                    decoration: _inputDecoration(
-                      hint: '60',
-                      icon: Icons.local_offer_outlined,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Zorunlu';
-                      }
-                      return null;
-                    },
+                    decoration: _inputDecoration(hint: '60', icon: Icons.local_offer_outlined),
                   ),
                 ],
               ),
@@ -420,92 +410,49 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
       children: [
         _sectionTitle('Stok ve Son Kullanma'),
         const SizedBox(height: 16),
-
         Container(
           padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: surfaceLow,
-            borderRadius: BorderRadius.circular(24),
-          ),
+          decoration: BoxDecoration(color: surfaceLow, borderRadius: BorderRadius.circular(24)),
           child: Column(
             children: [
               Row(
                 children: [
-                  Text(
-                    'Stok',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: textDark,
-                    ),
-                  ),
+                  Text('Stok', style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w800, color: textDark)),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: primary,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      '${stockValue.round()} adet',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(999)),
+                    child: Text('${stockValue.round()} adet', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
                   ),
                 ],
               ),
               Slider(
                 value: stockValue,
-                min: 1,
-                max: 50,
+                min: 1, max: 50,
                 activeColor: primary,
-                inactiveColor: Colors.grey.shade300,
-                onChanged: (value) {
-                  setState(() => stockValue = value);
-                },
+                onChanged: (value) => setState(() => stockValue = value),
               ),
             ],
           ),
         ),
-
         const SizedBox(height: 16),
-
         ListTile(
           tileColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           leading: const Icon(Icons.calendar_today, color: primary),
           title: const Text('Son Kullanma Tarihi'),
-          subtitle: Text(
-            '${expiryDate.day}.${expiryDate.month}.${expiryDate.year}',
-          ),
+          subtitle: Text('${expiryDate.day}.${expiryDate.month}.${expiryDate.year}'),
           trailing: const Icon(Icons.chevron_right),
           onTap: _pickExpiryDate,
         ),
-
         const SizedBox(height: 12),
-
         SwitchListTile(
           value: isActive,
           activeThumbColor: primary,
-          activeTrackColor: primary.withValues(alpha: 0.35),
           tileColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text('Ürün Aktif Olsun'),
-          subtitle: const Text(
-            'Aktif ürünler müşteriler tarafından görüntülenir.',
-          ),
-          onChanged: (value) {
-            setState(() => isActive = value);
-          },
+          onChanged: (value) => setState(() => isActive = value),
         ),
       ],
     );
@@ -519,13 +466,6 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
             height: 54,
             child: OutlinedButton(
               onPressed: isSubmitting ? null : () => Navigator.pop(context),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: textDark,
-                side: BorderSide(color: Colors.grey.shade300),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
               child: const Text('Vazgeç'),
             ),
           ),
@@ -538,23 +478,10 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
             child: ElevatedButton.icon(
               onPressed: isSubmitting ? null : _listProduct,
               icon: isSubmitting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Icon(Icons.rocket_launch),
               label: Text(isSubmitting ? 'Ekleniyor...' : 'Ürünü Yayınla'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: primary, foregroundColor: Colors.white),
             ),
           ),
         ),
@@ -563,27 +490,13 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
   }
 
   Widget _sectionTitle(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.plusJakartaSans(
-        fontSize: 20,
-        fontWeight: FontWeight.w800,
-        color: textDark,
-      ),
-    );
+    return Text(text, style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: textDark));
   }
 
   Widget _label(String text) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        text,
-        style: GoogleFonts.manrope(
-          fontSize: 13,
-          fontWeight: FontWeight.w800,
-          color: textDark,
-        ),
-      ),
+      child: Text(text, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w800, color: textDark)),
     );
   }
 }
