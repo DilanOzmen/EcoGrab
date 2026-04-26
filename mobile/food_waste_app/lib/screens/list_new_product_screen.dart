@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
-import 'package:image_picker/image_picker.dart'; // Eklendi
+import 'package:image_picker/image_picker.dart';
 
 class ListNewProductScreen extends StatefulWidget {
   const ListNewProductScreen({super.key});
@@ -33,7 +33,6 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
   bool isActive = true;
   bool isSubmitting = false;
   
-  // Yüklenen resmin URL'sini tutacak değişken
   String? _uploadedImageUrl;
 
   @override
@@ -46,7 +45,6 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
     super.dispose();
   }
 
-  // Fotoğraf Seçme ve Yükleme Fonksiyonu
   Future<void> _pickAndUploadImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(
@@ -59,7 +57,6 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
       setState(() => isSubmitting = true);
       try {
         final bytes = await image.readAsBytes();
-        // ApiClient içindeki yeni metodumuzu çağırıyoruz
         final imageUrl = await _apiClient.uploadProductImage(bytes, image.name);
         
         setState(() {
@@ -116,7 +113,6 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
         stock: stockValue.round(),
         expiryDate: expiryDate,
         isActive: isActive,
-        // Not: createProduct metoduna backend'de imageUrl desteği gelince buraya _uploadedImageUrl eklenebilir.
       );
 
       if (!mounted) return;
@@ -206,7 +202,7 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: primary.withValues(alpha: 0.10),
+            color: primary.withValues(alpha: 0.10), // Güncellendi: withValues
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
@@ -244,91 +240,69 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
     );
   }
 
-Widget _buildVisualSection() {
+  Widget _buildVisualSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Ürün Görseli'),
-        const SizedBox(height: 14),
-        InkWell(
-          onTap: isSubmitting ? null : _pickAndUploadImage,
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            width: double.infinity,
-            height: 180, // Daha geniş ve ferah bir alan
-            decoration: BoxDecoration(
-              color: surfaceLow,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.grey.shade200, width: 2),
-            ),
-            child: _uploadedImageUrl == null
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.add_a_photo_rounded, size: 42, color: primary),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Ürün Fotoğrafı Eklemek İçin Dokunun',
-                        style: GoogleFonts.manrope(
-                          fontSize: 14,
-                          color: textSoft,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Müşterilerin iştahını kabartacak bir kare seçin!',
-                        style: GoogleFonts.manrope(fontSize: 12, color: textSoft.withValues(alpha: 0.7)),
-                      ),
-                    ],
-                  )
-                : Stack(
-                    children: [
-                      // Fotoğrafın Tamamı Görünsün
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.network(
-                              '${ApiClient.baseUrl}$_uploadedImageUrl',
-                              fit: BoxFit.contain, // Fotoğrafı bozmadan içine sığdırır
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Sağ üstte değiştirme butonu
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: CircleAvatar(
-                          backgroundColor: primary,
-                          radius: 18,
-                          child: const Icon(Icons.edit, size: 18, color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
+        const Text(
+          'Ürün Görseli',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        if (_uploadedImageUrl != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 12, left: 4),
-            child: Row(
-              children: [
-                const Icon(Icons.check_circle, size: 16, color: primary),
-                const SizedBox(width: 6),
-                Text(
-                  'Görsel başarıyla backend\'e yüklendi.',
-                  style: GoogleFonts.manrope(fontSize: 12, color: primary, fontWeight: FontWeight.bold),
-                ),
-              ],
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: _pickAndUploadImage,
+                child: _uploadedImageUrl == null 
+                  ? _photoBox(icon: Icons.add_a_photo_outlined, text: 'Fotoğraf Ekle')
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.network(
+                        '${ApiClient.baseUrl}$_uploadedImageUrl', // Güncellendi: ApiClient.baseUrl
+                        height: 105,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => 
+                          _photoBox(icon: Icons.error_outline, text: 'Hata oluştu'),
+                      ),
+                    ),
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(child: _photoBox(icon: Icons.image_outlined, text: 'Boş')),
+            const SizedBox(width: 12),
+            Expanded(child: _photoBox(icon: Icons.image_outlined, text: 'Boş')),
+          ],
+        ),
       ],
     );
   }
-  
+
+  Widget _photoBox({required IconData icon, required String text}) {
+    return Container(
+      height: 105,
+      decoration: BoxDecoration(
+        color: surfaceLow,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: textSoft, size: 28),
+          const SizedBox(height: 6),
+          Text(
+            text,
+            style: GoogleFonts.manrope(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: textSoft,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildProductDetails() {
     return Column(
@@ -361,7 +335,7 @@ Widget _buildVisualSection() {
         const SizedBox(height: 16),
         _label('Kategori'),
         DropdownButtonFormField<String>(
-          initialValue: selectedCategory,
+          initialValue: selectedCategory, // Güncellendi: initialValue
           decoration: _inputDecoration(hint: 'Kategori seçin', icon: Icons.category_outlined),
           items: ['Vegetables', 'Bakery', 'Dairy', 'Fruit', 'Meal']
               .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -448,7 +422,7 @@ Widget _buildVisualSection() {
         const SizedBox(height: 12),
         SwitchListTile(
           value: isActive,
-          activeThumbColor: primary,
+          activeThumbColor: primary, // Güncellendi: activeThumbColor
           tileColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text('Ürün Aktif Olsun'),
