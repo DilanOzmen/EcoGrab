@@ -83,12 +83,14 @@ class ApiClient {
   Future<List<Product>> getProducts({
     String? search,
     String? category,
+    String? homeCategory,
     double? minDiscountPercent,
   }) async {
     final uri = Uri.parse('$baseUrl/api/customer/products').replace(
       queryParameters: {
         if (search != null) 'search': search,
         if (category != null) 'category': category,
+        if (homeCategory != null) 'homeCategory': homeCategory,
         if (minDiscountPercent != null)
           'minDiscountPercent': minDiscountPercent.toString(),
       },
@@ -110,11 +112,13 @@ class ApiClient {
   Future<List<Restaurant>> getRestaurants({
     String? search,
     String? city,
+    String? homeCategory,
   }) async {
     final uri = Uri.parse('$baseUrl/api/customer/restaurants').replace(
       queryParameters: {
         if (search != null) 'search': search,
         if (city != null) 'city': city,
+        if (homeCategory != null) 'homeCategory': homeCategory,
       },
     );
 

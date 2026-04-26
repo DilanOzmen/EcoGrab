@@ -22,6 +22,7 @@ class RescueHomeScreen extends StatefulWidget {
 
 class _RescueHomeScreenState extends State<RescueHomeScreen> {
   int _selectedIndex = 0;
+  _HomeCategoryFilter _selectedHomeFilter = _HomeCategoryFilter.market;
 
   final ApiClient _apiClient = ApiClient();
 
@@ -36,10 +37,11 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
     _ordersFuture = _loadOrdersData();
   }
 
-  Future<_HomeData> _loadHomeData() async {
+  Future<_HomeData> _loadHomeData([_HomeCategoryFilter? filter]) async {
+    final selectedFilter = filter ?? _selectedHomeFilter;
     final results = await Future.wait([
-      _apiClient.getProducts(),
-      _apiClient.getRestaurants(),
+      _apiClient.getProducts(homeCategory: selectedFilter.apiValue),
+      _apiClient.getRestaurants(homeCategory: selectedFilter.apiValue),
     ]);
 
     return _HomeData(
@@ -299,18 +301,46 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.only(left: 20, top: 10),
-        children: const [
+        children: [
           CategoryChip(
             icon: Icons.storefront,
             label: 'Market',
-            isSelected: true,
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.market,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.market),
           ),
-          CategoryChip(icon: Icons.coffee, label: 'Kafe'),
-          CategoryChip(icon: Icons.bakery_dining, label: 'Fırın'),
-          CategoryChip(icon: Icons.local_drink, label: 'İçecek'),
+          CategoryChip(
+            icon: Icons.coffee,
+            label: 'Kafe',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.kafe,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.kafe),
+          ),
+          CategoryChip(
+            icon: Icons.bakery_dining,
+            label: 'Fırın',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.firin,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.firin),
+          ),
+          CategoryChip(
+            icon: Icons.local_drink,
+            label: 'İçecek',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.icecek,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.icecek),
+          ),
         ],
       ),
     );
+  }
+
+  void _selectHomeCategory(_HomeCategoryFilter filter) {
+    if (_selectedHomeFilter == filter) {
+      return;
+    }
+
+    final future = _loadHomeData(filter);
+    setState(() {
+      _selectedHomeFilter = filter;
+      _homeFuture = future;
+    });
   }
 
   Widget _buildVerticalProductCard(
@@ -760,12 +790,14 @@ class CategoryChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
+  final VoidCallback? onTap;
 
   const CategoryChip({
     super.key,
     required this.icon,
     required this.label,
     this.isSelected = false,
+    this.onTap,
   });
 
   @override
@@ -774,15 +806,19 @@ class CategoryChip extends StatelessWidget {
       padding: const EdgeInsets.only(right: 18),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? const Color(0xFFD8F3DC)
-                  : const Color(0xFFF3F5F7),
-              borderRadius: BorderRadius.circular(20),
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFFD8F3DC)
+                    : const Color(0xFFF3F5F7),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(icon, color: const Color(0xFF1B4332), size: 26),
             ),
-            child: Icon(icon, color: const Color(0xFF1B4332), size: 26),
           ),
           const SizedBox(height: 8),
           Text(
@@ -803,4 +839,15 @@ class _HomeData {
   final List<Restaurant> restaurants;
 
   const _HomeData({required this.products, required this.restaurants});
+}
+
+enum _HomeCategoryFilter { market, kafe, firin, icecek }
+
+extension on _HomeCategoryFilter {
+  String get apiValue => switch (this) {
+    _HomeCategoryFilter.market => 'market',
+    _HomeCategoryFilter.kafe => 'kafe',
+    _HomeCategoryFilter.firin => 'firin',
+    _HomeCategoryFilter.icecek => 'icecek',
+  };
 }

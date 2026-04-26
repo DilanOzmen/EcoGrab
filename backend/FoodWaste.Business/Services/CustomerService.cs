@@ -8,8 +8,9 @@ namespace FoodWaste.Business.Services;
 
 public class CustomerService(FoodWasteDbContext dbContext, INotificationService notificationService) : ICustomerService
 {
-    public async Task<IReadOnlyList<NearbyRestaurantDto>> GetRestaurantsAsync(string? city, string? search, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<NearbyRestaurantDto>> GetRestaurantsAsync(string? city, string? search, string? homeCategory, CancellationToken cancellationToken = default)
     {
+        var now = DateTime.UtcNow;
         var query = dbContext.Restaurants
             .AsNoTracking()
             .Where(x => !x.IsDeleted)
@@ -25,6 +26,17 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
         {
             var searchValue = search.Trim();
             query = query.Where(x => x.Name.Contains(searchValue) || x.Address.Contains(searchValue));
+        }
+
+        var homeCategoryProductCategories = GetHomeCategoryProductCategories(homeCategory);
+        if (homeCategoryProductCategories.Count > 0)
+        {
+            query = query.Where(x => x.Products.Any(p => !p.IsDeleted
+                && p.IsActive
+                && p.Stock > 0
+                && p.ExpiryDate > now
+                && p.DiscountedPrice < p.OriginalPrice
+                && homeCategoryProductCategories.Contains(p.Category)));
         }
 
         return await query
@@ -62,6 +74,12 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
         {
             var category = filter.Category.Trim();
             query = query.Where(x => x.Category == category);
+        }
+
+        var homeCategoryProductCategories = GetHomeCategoryProductCategories(filter.HomeCategory);
+        if (homeCategoryProductCategories.Count > 0)
+        {
+            query = query.Where(x => homeCategoryProductCategories.Contains(x.Category));
         }
 
         if (filter.MinPrice.HasValue)
@@ -485,6 +503,32 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
     }
 
     private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180;
+
+    private static IReadOnlyList<string> GetHomeCategoryProductCategories(string? homeCategory)
+    {
+        return NormalizeHomeCategory(homeCategory) switch
+        {
+            "market" => ["Kahvaltilik", "Meyve", "Sut Urunleri"],
+            "kafe" => ["Atistirmalik", "Fast Food", "Ev Yemegi"],
+            "firin" => ["Firincilik", "Tatli"],
+            "icecek" => ["Icecek"],
+            _ => []
+        };
+    }
+
+    private static string NormalizeHomeCategory(string? value)
+    {
+        return value?
+            .Trim()
+            .ToLowerInvariant()
+            .Replace('ı', 'i')
+            .Replace('İ', 'i')
+            .Replace('ş', 's')
+            .Replace('ç', 'c')
+            .Replace('ö', 'o')
+            .Replace('ü', 'u')
+            .Replace('ğ', 'g') ?? string.Empty;
+    }
 
     private async Task CreateReservationNotificationsAsync(int userId, int? sellerUserId, int orderId, CancellationToken cancellationToken)
     {
