@@ -56,41 +56,39 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
   }
 
   Future<void> _listProduct() async {
+    // 1. Form validation (Eksik alan kontrolü)
     if (!_formKey.currentState!.validate()) return;
 
+    // 2. Sayısal verilerin parse edilmesi
     final restaurantId = int.tryParse(restaurantIdController.text.trim());
     final originalPrice = double.tryParse(originalPriceController.text.trim());
     final discountedPrice = double.tryParse(discountedPriceController.text.trim());
 
+    // 3. Mantıksal kontroller
     if (restaurantId == null || restaurantId <= 0) {
-      _showMessage('Geçerli bir Restaurant ID girin.');
+      _showMessage('Lütfen geçerli bir Restoran ID girin.');
       return;
     }
-
     if (originalPrice == null || originalPrice <= 0) {
-      _showMessage('Geçerli bir orijinal fiyat girin.');
+      _showMessage('Orijinal fiyat boş olamaz.');
+      return;
+    }
+    if (discountedPrice != null && discountedPrice > originalPrice) {
+      _showMessage('İndirimli fiyat orijinal fiyattan yüksek olamaz.');
       return;
     }
 
-    if (discountedPrice == null || discountedPrice <= 0) {
-      _showMessage('Geçerli bir indirimli fiyat girin.');
-      return;
-    }
-
-    if (discountedPrice > originalPrice) {
-      _showMessage('İndirimli fiyat orijinal fiyattan büyük olamaz.');
-      return;
-    }
-
+    // 4. Gönderim süreci başlat
     setState(() => isSubmitting = true);
 
     try {
-      await _apiClient.createProduct(
+      // ApiClient içindeki metodu çağırıyoruz
+      final newProductId = await _apiClient.createProduct(
         restaurantId: restaurantId,
         name: nameController.text.trim(),
         description: descriptionController.text.trim(),
         originalPrice: originalPrice,
-        discountedPrice: discountedPrice,
+        discountedPrice: discountedPrice ?? originalPrice,
         category: selectedCategory,
         stock: stockValue.round(),
         expiryDate: expiryDate,
@@ -99,14 +97,19 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
 
       if (!mounted) return;
 
-      _showMessage('Ürün başarıyla eklendi.');
-      Navigator.pop(context, true);
+      if (newProductId > 0) {
+        _showMessage('Ürün başarıyla yayınlandı! (ID: $newProductId)');
+        // 5. Başarılıysa sayfayı kapat ve önceki sayfaya 'true' döndür (yenileme için)
+        Navigator.pop(context, true);
+      }
     } catch (e) {
+      // Hata mesajını sadeleştirerek göster
       _showMessage(e.toString().replaceAll('ApiException: ', ''));
     } finally {
       if (mounted) setState(() => isSubmitting = false);
     }
   }
+
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

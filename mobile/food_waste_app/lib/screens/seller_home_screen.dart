@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:food_waste_app/core/app_state.dart';
+// Senin sayfanın yolu (Dosya adın farklıysa burayı ona göre güncelle)
+import 'list_new_product_screen.dart'; 
 import 'login_screen.dart';
 
 class SellerHomeScreen extends StatelessWidget {
@@ -64,6 +66,29 @@ class SellerHomeScreen extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
+            
+            // --- EKLEDİĞİMİZ BUTON BAŞLANGICI ---
+            const SizedBox(height: 32), 
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ListNewProductScreen()),
+                );
+              },
+              icon: const Icon(Icons.add_box_outlined),
+              label: const Text('Yeni Ürün Ekle'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+            ),
+            // --- EKLEDİĞİMİZ BUTON BİTİŞİ ---
           ],
         ),
       ),
