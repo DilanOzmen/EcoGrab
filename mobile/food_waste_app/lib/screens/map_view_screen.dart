@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:food_waste_app/data/models/restaurant.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
 import 'restaurant_detail_screen.dart';
@@ -12,7 +14,9 @@ class MapViewScreen extends StatefulWidget {
 
 class _MapViewScreenState extends State<MapViewScreen> {
   final ApiClient _apiClient = ApiClient();
+  final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
+  
   List<Restaurant> _restaurants = [];
   bool _loading = false;
   int _selectedIndex = 0;
@@ -33,9 +37,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
     setState(() => _loading = true);
     try {
       final results = await _apiClient.getRestaurants(search: search);
-      if (mounted) setState(() => _restaurants = results);
+      if (mounted) {
+        setState(() {
+          _restaurants = results;
+        });
+      }
     } catch (_) {
-      // keep existing list on error
+      // Hata durumunda liste boş kalmasın diye mevcut liste korunabilir
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -43,6 +51,11 @@ class _MapViewScreenState extends State<MapViewScreen> {
 
   void _onSearchChanged(String value) {
     _fetchRestaurants(search: value.isEmpty ? null : value);
+  }
+
+  void _moveToRestaurant(Restaurant res, int index) {
+    setState(() => _selectedIndex = index);
+    _mapController.move(LatLng(res.latitude, res.longitude), 15.0);
   }
 
   void _openRestaurantDetail(Restaurant restaurant) async {
@@ -71,24 +84,45 @@ class _MapViewScreenState extends State<MapViewScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // --- ARKA PLAN: HARİTA DOKUSU ---
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: const BoxDecoration(
-              color: Color(0xFFE5E8E5),
+          // --- GERÇEK HARİTA KATMANI (OpenStreetMap) ---
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              // Senin veritabanındaki restoranların olduğu Pendik merkezli koordinatlar
+              initialCenter: const LatLng(40.8922, 29.2321), 
+              initialZoom: 13.0,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all,
+              ),
             ),
-            child: CustomPaint(
-              painter: _MapGridPainter(),
-            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.foodwaste.app',
+              ),
+              // --- DİNAMİK MARKERLAR ---
+              MarkerLayer(
+                markers: _restaurants.asMap().entries.map((entry) {
+                  int idx = entry.key;
+                  Restaurant res = entry.value;
+                  return Marker(
+                    point: LatLng(res.latitude, res.longitude),
+                    width: 60,
+                    height: 80,
+                    child: GestureDetector(
+                      onTap: () => _moveToRestaurant(res, idx),
+                      child: _buildMapMarker(
+                        isSelected: _selectedIndex == idx,
+                        label: idx == 0 ? "%60 İNDİRİM" : "", 
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
           ),
-          
-          // --- MARKERLAR ---
-          _buildMapMarker(top: 250, left: 100, isSelected: true, label: "%60 İNDİRİM"),
-          _buildMapMarker(top: 400, left: 280, isSelected: false, label: ""),
-          _buildMapMarker(top: 150, left: 220, isSelected: false, label: ""),
 
-          // --- TÜRKÇE ARAMA ÇUBUĞU ---
+          // --- ÜST ARAMA ÇUBUĞU ---
           Positioned(
             top: 50,
             left: 20,
@@ -112,13 +146,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
                     const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1B4332)),
                     )
                   else
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F5238),
+                        color: const Color(0xFF1B4332),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.tune, color: Colors.white, size: 18),
@@ -128,7 +162,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
             ),
           ),
 
-          // --- ALT KART ---
+          // --- ALT RESTORAN KARTI ---
           Positioned(
             bottom: 30,
             left: 15,
@@ -144,11 +178,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
     if (_restaurants.isEmpty) {
       return _buildModernBox(
         padding: const EdgeInsets.all(16),
-        child: const Center(child: Text('Restoran bulunamadi.')),
+        child: const Center(child: Text('Yükleniyor veya dükkan bulunamadı...')),
       );
     }
 
-    // Show one restaurant at a time with prev/next arrows
     final restaurant = _restaurants[_selectedIndex % _restaurants.length];
 
     return _buildModernBox(
@@ -159,10 +192,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
             width: 85,
             height: 85,
             decoration: BoxDecoration(
-              color: const Color(0xFFB1F0CE),
+              color: const Color(0xFFD8F3DC),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.store, size: 45, color: Color(0xFF0F5238)),
+            child: const Icon(Icons.storefront, size: 45, color: Color(0xFF1B4332)),
           ),
           const SizedBox(width: 15),
           Expanded(
@@ -175,46 +208,44 @@ class _MapViewScreenState extends State<MapViewScreen> {
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 Text(
-                  '${restaurant.city} • ${restaurant.address}',
+                  '${restaurant.city} • Pendik',
                   style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${_selectedIndex % _restaurants.length + 1}/${_restaurants.length}',
+                      '${(_selectedIndex % _restaurants.length) + 1}/${_restaurants.length}',
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     Row(
                       children: [
                         if (_restaurants.length > 1)
                           IconButton(
-                            onPressed: () => setState(() => _selectedIndex--),
-                            icon: const Icon(Icons.chevron_left, color: Color(0xFF0F5238)),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
+                            onPressed: () {
+                              int newIdx = _selectedIndex == 0 ? _restaurants.length - 1 : _selectedIndex - 1;
+                              _moveToRestaurant(_restaurants[newIdx], newIdx);
+                            },
+                            icon: const Icon(Icons.chevron_left, color: Color(0xFF1B4332)),
                           ),
                         if (_restaurants.length > 1)
                           IconButton(
-                            onPressed: () => setState(() => _selectedIndex++),
-                            icon: const Icon(Icons.chevron_right, color: Color(0xFF0F5238)),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
+                            onPressed: () {
+                              int newIdx = (_selectedIndex + 1) % _restaurants.length;
+                              _moveToRestaurant(_restaurants[newIdx], newIdx);
+                            },
+                            icon: const Icon(Icons.chevron_right, color: Color(0xFF1B4332)),
                           ),
                         ElevatedButton(
                           onPressed: () => _openRestaurantDetail(restaurant),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0F5238),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
+                            backgroundColor: const Color(0xFF1B4332),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text('Detay',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
+                          child: const Text('Detay', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -236,8 +267,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            // withOpacity yerine withValues(alpha: 0.08) kullanıldı
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withAlpha(20),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
@@ -247,60 +277,34 @@ class _MapViewScreenState extends State<MapViewScreen> {
     );
   }
 
-  Widget _buildMapMarker({required double top, required double left, required bool isSelected, required String label}) {
-    return Positioned(
-      top: top,
-      left: left,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF9D4300) : const Color(0xFF0F5238),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2.5),
-            ),
-            child: const Icon(Icons.storefront, size: 18, color: Colors.white),
+  Widget _buildMapMarker({required bool isSelected, required String label}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF9D4300) : const Color(0xFF1B4332),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
           ),
-          if (label.isNotEmpty)
-            Container(
-              margin: const EdgeInsets.only(top: 5),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF9D4300),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                label,
-                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-              ),
+          child: const Icon(Icons.storefront, size: 20, color: Colors.white),
+        ),
+        if (label.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF9D4300),
+              borderRadius: BorderRadius.circular(8),
             ),
-        ],
-      ),
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+            ),
+          ),
+      ],
     );
   }
-}
-
-class _MapGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      // withOpacity yerine withValues kullanıldı
-      ..color = Colors.white.withValues(alpha: 0.5)
-      ..strokeWidth = 20
-      ..style = PaintingStyle.stroke;
-
-    final path = Path();
-    path.moveTo(0, size.height * 0.3);
-    path.lineTo(size.width, size.height * 0.4);
-    path.moveTo(size.width * 0.4, 0);
-    path.lineTo(size.width * 0.5, size.height);
-    path.moveTo(0, size.height * 0.7);
-    path.quadraticBezierTo(size.width * 0.5, size.height * 0.6, size.width, size.height * 0.8);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

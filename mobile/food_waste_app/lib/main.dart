@@ -5,6 +5,8 @@ import 'package:food_waste_app/screens/register_screen.dart';
 import 'package:food_waste_app/screens/rescue_home_screen.dart';
 import 'package:food_waste_app/screens/seller_home_screen.dart';
 
+
+
 void main() {
   runApp(const FoodWasteApp());
 }

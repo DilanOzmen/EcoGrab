@@ -11,10 +11,10 @@ class ListNewProductScreen extends StatefulWidget {
 }
 
 class _ListNewProductScreenState extends State<ListNewProductScreen> {
+  // Renk Paleti
   static const primary = Color(0xFF0F5238);
   static const background = Color(0xFFF8FAF8);
-  static const surfaceLow = Color(0xFFF2F4F2);
-  static const inputBg = Color(0xFFFFFFFF);
+  static const surfaceLow = Color(0xFFF1F3F1);
   static const textDark = Color(0xFF191C1B);
   static const textSoft = Color(0xFF707973);
 
@@ -32,7 +32,6 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
   DateTime expiryDate = DateTime.now().add(const Duration(days: 1));
   bool isActive = true;
   bool isSubmitting = false;
-  
   String? _uploadedImageUrl;
 
   @override
@@ -58,7 +57,6 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
       try {
         final bytes = await image.readAsBytes();
         final imageUrl = await _apiClient.uploadProductImage(bytes, image.name);
-        
         setState(() {
           _uploadedImageUrl = imageUrl;
           _showMessage('Görsel başarıyla yüklendi!');
@@ -71,22 +69,9 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
     }
   }
 
-  Future<void> _pickExpiryDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: expiryDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-
-    if (picked != null) {
-      setState(() => expiryDate = picked);
-    }
-  }
-
   Future<void> _listProduct() async {
     if (!_formKey.currentState!.validate()) return;
-
+    
     final restaurantId = int.tryParse(restaurantIdController.text.trim());
     final originalPrice = double.tryParse(originalPriceController.text.trim());
     final discountedPrice = double.tryParse(discountedPriceController.text.trim());
@@ -95,19 +80,14 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
       _showMessage('Lütfen geçerli bir Restoran ID girin.');
       return;
     }
-    if (originalPrice == null || originalPrice <= 0) {
-      _showMessage('Orijinal fiyat boş olamaz.');
-      return;
-    }
 
     setState(() => isSubmitting = true);
-
     try {
       final newProductId = await _apiClient.createProduct(
         restaurantId: restaurantId,
         name: nameController.text.trim(),
         description: descriptionController.text.trim(),
-        originalPrice: originalPrice,
+        originalPrice: originalPrice!,
         discountedPrice: discountedPrice ?? originalPrice,
         category: selectedCategory,
         stock: stockValue.round(),
@@ -116,7 +96,6 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
       );
 
       if (!mounted) return;
-
       if (newProductId > 0) {
         _showMessage('Ürün başarıyla yayınlandı!');
         Navigator.pop(context, true);
@@ -132,345 +111,257 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  InputDecoration _inputDecoration({required String hint, IconData? icon}) {
-    return InputDecoration(
-      hintText: hint,
-      prefixIcon: icon != null ? Icon(icon, color: textSoft) : null,
-      filled: true,
-      fillColor: inputBg,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: Colors.grey.shade200),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: Colors.grey.shade200),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: primary, width: 1.4),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: background,
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 22),
-              _buildProgress(),
-              const SizedBox(height: 28),
-              _buildVisualSection(),
-              const SizedBox(height: 28),
-              _buildProductDetails(),
-              const SizedBox(height: 28),
-              _buildStockAndExpiry(),
-              const SizedBox(height: 28),
-              _buildActionButtons(),
-            ],
-          ),
+      appBar: AppBar(
+        backgroundColor: background,
+        elevation: 0,
+        centerTitle: true,
+        title: Text('Yeni Ürün Listele', style: GoogleFonts.plusJakartaSans(color: textDark, fontWeight: FontWeight.bold)),
+        leading: IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: textDark)),
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
+          children: [
+            // 1. MODERN FOTOĞRAF YÜKLEME ALANI
+            _buildPhotoPickerArea(),
+            const SizedBox(height: 32),
+
+            // 2. ÜRÜN BİLGİLERİ SEKSİYONU
+            _sectionTitle('Ürün Detayları'),
+            _buildInputField(
+              label: 'Restaurant ID',
+              controller: restaurantIdController,
+              hint: 'Örn: 1',
+              icon: Icons.storefront_rounded,
+              keyboardType: TextInputType.number,
+            ),
+            _buildInputField(
+              label: 'Ürün Adı',
+              controller: nameController,
+              hint: 'Örn: Organik Domates Sepeti',
+              icon: Icons.shopping_bag_outlined,
+            ),
+            _buildInputField(
+              label: 'Açıklama',
+              controller: descriptionController,
+              hint: 'Ürünün içeriğini kısaca anlatın...',
+              icon: Icons.notes_rounded,
+              maxLines: 3,
+            ),
+
+            // 3. KATEGORİ SEÇİMİ
+            _buildLabel('Kategori'),
+            DropdownButtonFormField<String>(
+              value: selectedCategory,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: primary),
+              decoration: _inputDecoration(icon: Icons.category_outlined),
+              items: ['Vegetables', 'Bakery', 'Dairy', 'Fruit', 'Meal']
+                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                  .toList(),
+              onChanged: (v) => setState(() => selectedCategory = v!),
+            ),
+            const SizedBox(height: 24),
+
+            // 4. FİYATLAR (YAN YANA)
+            Row(
+              children: [
+                Expanded(
+                  child: _buildInputField(
+                    label: 'Orijinal Fiyat',
+                    controller: originalPriceController,
+                    hint: '100',
+                    icon: Icons.sell_outlined,
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildInputField(
+                    label: 'İndirimli Fiyat',
+                    controller: discountedPriceController,
+                    hint: '60',
+                    icon: Icons.local_offer_rounded,
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+
+            // 5. STOK VE TARİH
+            const SizedBox(height: 8),
+            _buildStockSlider(),
+            const SizedBox(height: 20),
+            _buildDatePicker(),
+            
+            const SizedBox(height: 40),
+            _buildSubmitButton(),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back, color: primary),
+  Widget _buildPhotoPickerArea() {
+    return GestureDetector(
+      onTap: _pickAndUploadImage,
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        decoration: BoxDecoration(
+          color: const Color(0xFFD8F3DC).withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: primary.withValues(alpha: 0.2), width: 2, style: BorderStyle.solid),
+          image: _uploadedImageUrl != null 
+            ? DecorationImage(image: NetworkImage('${ApiClient.baseUrl}$_uploadedImageUrl'), fit: BoxFit.cover)
+            : null,
         ),
-        Expanded(
-          child: Text(
-            'Yeni Ürün Ekle',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: textDark,
-            ),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        child: _uploadedImageUrl == null ? Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.add_a_photo_rounded, size: 48, color: primary),
+            const SizedBox(height: 12),
+            Text("Ürün Fotoğrafı Ekle", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: primary, fontSize: 16)),
+            const Text("Müşteriler görsellere güvenir", style: TextStyle(color: textSoft, fontSize: 12)),
+          ],
+        ) : Container(
           decoration: BoxDecoration(
-            color: primary.withValues(alpha: 0.10), // Güncellendi: withValues
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(24),
+            color: Colors.black.withValues(alpha: 0.3),
           ),
-          child: Text(
-            'Satıcı',
-            style: GoogleFonts.manrope(
-              color: primary,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+          child: const Icon(Icons.edit, color: Colors.white, size: 30),
         ),
-      ],
-    );
-  }
-
-  Widget _buildProgress() {
-    return Row(
-      children: [
-        Expanded(child: _progressLine(true)),
-        const SizedBox(width: 6),
-        Expanded(child: _progressLine(true)),
-        const SizedBox(width: 6),
-        Expanded(child: _progressLine(true)),
-      ],
-    );
-  }
-
-  Widget _progressLine(bool active) {
-    return Container(
-      height: 5,
-      decoration: BoxDecoration(
-        color: active ? primary : Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(999),
       ),
     );
   }
 
-  Widget _buildVisualSection() {
+  Widget _buildInputField({
+    required String label,
+    required TextEditingController controller,
+    required String hint,
+    IconData? icon,
+    int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Ürün Görseli',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        _buildLabel(label),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          keyboardType: keyboardType,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+          decoration: _inputDecoration(hint: hint, icon: icon),
+          validator: (v) => (v == null || v.isEmpty) ? 'Bu alan boş bırakılamaz' : null,
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: InkWell(
-                onTap: _pickAndUploadImage,
-                child: _uploadedImageUrl == null 
-                  ? _photoBox(icon: Icons.add_a_photo_outlined, text: 'Fotoğraf Ekle')
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Image.network(
-                        '${ApiClient.baseUrl}$_uploadedImageUrl', // Güncellendi: ApiClient.baseUrl
-                        height: 105,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => 
-                          _photoBox(icon: Icons.error_outline, text: 'Hata oluştu'),
-                      ),
-                    ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: _photoBox(icon: Icons.image_outlined, text: 'Boş')),
-            const SizedBox(width: 12),
-            Expanded(child: _photoBox(icon: Icons.image_outlined, text: 'Boş')),
-          ],
-        ),
+        const SizedBox(height: 20),
       ],
     );
   }
 
-  Widget _photoBox({required IconData icon, required String text}) {
+  InputDecoration _inputDecoration({String? hint, IconData? icon}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: textSoft, fontSize: 14, fontWeight: FontWeight.normal),
+      prefixIcon: icon != null ? Icon(icon, color: primary, size: 22) : null,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.all(18),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: Colors.grey.shade200)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: Colors.grey.shade200)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: primary, width: 1.5)),
+    );
+  }
+
+  Widget _buildStockSlider() {
     return Container(
-      height: 105,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: surfaceLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.grey.shade100)
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: textSoft, size: 28),
-          const SizedBox(height: 6),
-          Text(
-            text,
-            style: GoogleFonts.manrope(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: textSoft,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("Stok Miktarı", style: TextStyle(fontWeight: FontWeight.bold)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(10)),
+                child: Text("${stockValue.round()} adet", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+              ),
+            ],
+          ),
+          Slider(
+            value: stockValue,
+            min: 1, max: 50,
+            activeColor: primary,
+            inactiveColor: surfaceLow,
+            onChanged: (v) => setState(() => stockValue = v),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProductDetails() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionTitle('Ürün Bilgileri'),
-        const SizedBox(height: 16),
-        _label('Restaurant ID'),
-        TextFormField(
-          controller: restaurantIdController,
-          keyboardType: TextInputType.number,
-          decoration: _inputDecoration(hint: 'Orn: 1', icon: Icons.storefront),
-          validator: (value) => (value == null || value.trim().isEmpty) ? 'Zorunlu' : null,
-        ),
-        const SizedBox(height: 16),
-        _label('Ürün Adı'),
-        TextFormField(
-          controller: nameController,
-          decoration: _inputDecoration(hint: 'Örn: Organik Sebze Kutusu', icon: Icons.shopping_bag_outlined),
-          validator: (value) => (value == null || value.trim().isEmpty) ? 'Zorunlu' : null,
-        ),
-        const SizedBox(height: 16),
-        _label('Açıklama'),
-        TextFormField(
-          controller: descriptionController,
-          maxLines: 3,
-          decoration: _inputDecoration(hint: 'Ürün detaylarını yazın.', icon: Icons.description_outlined),
-          validator: (value) => (value == null || value.trim().isEmpty) ? 'Zorunlu' : null,
-        ),
-        const SizedBox(height: 16),
-        _label('Kategori'),
-        DropdownButtonFormField<String>(
-          initialValue: selectedCategory, // Güncellendi: initialValue
-          decoration: _inputDecoration(hint: 'Kategori seçin', icon: Icons.category_outlined),
-          items: ['Vegetables', 'Bakery', 'Dairy', 'Fruit', 'Meal']
-              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-              .toList(),
-          onChanged: (value) => setState(() => selectedCategory = value!),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _label('Orijinal Fiyat'),
-                  TextFormField(
-                    controller: originalPriceController,
-                    keyboardType: TextInputType.number,
-                    decoration: _inputDecoration(hint: '100', icon: Icons.attach_money),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _label('İndirimli Fiyat'),
-                  TextFormField(
-                    controller: discountedPriceController,
-                    keyboardType: TextInputType.number,
-                    decoration: _inputDecoration(hint: '60', icon: Icons.local_offer_outlined),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
+  Widget _buildDatePicker() {
+    return ListTile(
+      tileColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: Colors.grey.shade100)),
+      leading: const Icon(Icons.event_available, color: primary),
+      title: const Text("Son Kullanma Tarihi", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      subtitle: Text("${expiryDate.day}.${expiryDate.month}.${expiryDate.year}", style: const TextStyle(color: textSoft)),
+      trailing: const Icon(Icons.edit_calendar_rounded, size: 20, color: primary),
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: expiryDate,
+          firstDate: DateTime.now(),
+          lastDate: DateTime.now().add(const Duration(days: 365)),
+        );
+        if (picked != null) setState(() => expiryDate = picked);
+      },
     );
   }
 
-  Widget _buildStockAndExpiry() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionTitle('Stok ve Son Kullanma'),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(color: surfaceLow, borderRadius: BorderRadius.circular(24)),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Text('Stok', style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w800, color: textDark)),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(999)),
-                    child: Text('${stockValue.round()} adet', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-                  ),
-                ],
-              ),
-              Slider(
-                value: stockValue,
-                min: 1, max: 50,
-                activeColor: primary,
-                onChanged: (value) => setState(() => stockValue = value),
-              ),
-            ],
-          ),
+  Widget _buildSubmitButton() {
+    return Container(
+      width: double.infinity,
+      height: 60,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(color: primary.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 6))
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: isSubmitting ? null : _listProduct,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          elevation: 0,
         ),
-        const SizedBox(height: 16),
-        ListTile(
-          tileColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          leading: const Icon(Icons.calendar_today, color: primary),
-          title: const Text('Son Kullanma Tarihi'),
-          subtitle: Text('${expiryDate.day}.${expiryDate.month}.${expiryDate.year}'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: _pickExpiryDate,
-        ),
-        const SizedBox(height: 12),
-        SwitchListTile(
-          value: isActive,
-          activeThumbColor: primary, // Güncellendi: activeThumbColor
-          tileColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Ürün Aktif Olsun'),
-          onChanged: (value) => setState(() => isActive = value),
-        ),
-      ],
+        child: isSubmitting 
+          ? const CircularProgressIndicator(color: Colors.white)
+          : const Text("ÜRÜNÜ YAYINLA", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.1)),
+      ),
     );
   }
 
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 54,
-            child: OutlinedButton(
-              onPressed: isSubmitting ? null : () => Navigator.pop(context),
-              child: const Text('Vazgeç'),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          flex: 2,
-          child: SizedBox(
-            height: 54,
-            child: ElevatedButton.icon(
-              onPressed: isSubmitting ? null : _listProduct,
-              icon: isSubmitting
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Icon(Icons.rocket_launch),
-              label: Text(isSubmitting ? 'Ekleniyor...' : 'Ürünü Yayınla'),
-              style: ElevatedButton.styleFrom(backgroundColor: primary, foregroundColor: Colors.white),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _buildLabel(String text) => Padding(
+    padding: const EdgeInsets.only(left: 4, bottom: 8),
+    child: Text(text, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w800, color: primary)),
+  );
 
-  Widget _sectionTitle(String text) {
-    return Text(text, style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: textDark));
-  }
-
-  Widget _label(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(text, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w800, color: textDark)),
-    );
-  }
+  Widget _sectionTitle(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Text(text, style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: textDark)),
+  );
 }

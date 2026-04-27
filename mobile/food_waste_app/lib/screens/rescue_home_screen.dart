@@ -608,84 +608,11 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
           onRefresh: _refreshOrders,
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             itemCount: orders.length,
             itemBuilder: (context, index) {
               final order = orders[index];
-              final itemNames = order.items
-                  .map((i) => i.productName)
-                  .join(', ');
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(10),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: InkWell(
-                  onTap: () async {
-                    final changed = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => OrderTrackingScreen(
-                          orderId: order.id,
-                          apiClient: _apiClient,
-                        ),
-                      ),
-                    );
-
-                    if (changed == true && mounted) {
-                      _refreshOrders();
-                    }
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            '#${order.id}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const Spacer(),
-                          _statusBadge(order.status),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        itemNames.isNotEmpty ? itemNames : 'Ürün bilgisi yok',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Text(
-                            '₺${order.totalAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              color: Color(0xFF1B4332),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const Spacer(),
-                          const Icon(Icons.chevron_right),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
+              return _buildModernOrderCard(order);
             },
           ),
         );
@@ -693,47 +620,141 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
     );
   }
 
-  Widget _statusBadge(String status) {
-    Color color;
-    String text;
-
-    switch (status.toLowerCase()) {
-      case 'pending':
-        color = Colors.orange;
-        text = 'Bekliyor';
-        break;
-      case 'confirmed':
-        color = Colors.blue;
-        text = 'Onaylandı';
-        break;
-      case 'readyforpickup':
-        color = const Color(0xFF1B4332);
-        text = 'Teslime Hazır';
+  Widget _buildModernOrderCard(CustomerOrder order) {
+    // Duruma göre renk ve metin belirleyelim
+    Color statusColor;
+    String statusText;
+    
+    switch (order.status.toLowerCase()) {
+      case 'cancelled':
+      case 'iptal':
+        statusColor = Colors.redAccent;
+        statusText = "İptal Edildi";
         break;
       case 'completed':
-        color = Colors.green;
-        text = 'Tamamlandı';
+        statusColor = const Color(0xFF2D6A4F);
+        statusText = "Teslim Edildi";
         break;
-      case 'cancelled':
-        color = Colors.red;
-        text = 'İptal';
+      case 'readyforpickup':
+        statusColor = Colors.orange;
+        statusText = "Teslime Hazır";
+        break;
+      case 'confirmed':
+        statusColor = Colors.blue;
+        statusText = "Onaylandı";
         break;
       default:
-        color = Colors.grey;
-        text = status;
+        statusColor = const Color(0xFF1B4332);
+        statusText = "Bekliyor";
     }
 
+    final itemNames = order.items.map((i) => i.productName).join(', ');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(15),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: () async {
+          final changed = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OrderTrackingScreen(
+                orderId: order.id,
+                apiClient: _apiClient,
+              ),
+            ),
+          );
+          if (changed == true && mounted) {
+            _refreshOrders();
+          }
+        },
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                // Sol taraftaki renkli durum şeridi
+                Container(width: 6, color: statusColor),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Sipariş #${order.id}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                                fontSize: 13,
+                              ),
+                            ),
+                            _statusBadge(statusText, statusColor),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          itemNames.isNotEmpty ? itemNames : 'Ürün bilgisi yok',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1B4332),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "₺${order.totalAmount.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF2D6A4F),
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFF1B4332)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  Widget _statusBadge(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withAlpha(30),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: color,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
       ),
