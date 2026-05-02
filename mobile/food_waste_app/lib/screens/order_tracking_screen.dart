@@ -32,7 +32,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     _orderFuture = widget.apiClient.getOrderDetail(widget.orderId);
   }
 
-  // Takip adımlarını modernize edilmiş metinlerle oluşturur
   List<TrackingStep> _buildSteps(String status) {
     final statuses = ['Pending', 'Confirmed', 'ReadyForPickup', 'Completed'];
     final currentIndex = statuses.indexOf(status);
@@ -113,10 +112,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9F8), // Gurme arka plan
+      backgroundColor: const Color(0xFFF8F9F8),
       appBar: AppBar(
-        title: Text('Sipariş Takibi #${widget.orderId}', 
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Sipariş Takibi #${widget.orderId}',
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -124,12 +125,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       bottomNavigationBar: BottomNavBar(
         currentIndex: 1,
         onTap: (index) {
-           if (index == 1) {
+          if (index == 1) {
             Navigator.pop(context, true);
           } else {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => RescueHomeScreen(initialIndex: index == 0 ? 0 : 3)),
+              MaterialPageRoute(
+  builder: (_) => RescueHomeScreen(
+    initialIndex: index == 0 ? 0 : 3,
+    apiClient: widget.apiClient,
+  ),
+),
               (route) => false,
             );
           }
@@ -154,7 +160,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Durum Rozeti ve Kod Kartı
                 Center(
                   child: Column(
                     children: [
@@ -165,31 +170,35 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // Ürün Bilgileri Kartı (Modernize Edildi)
+
                 _buildInfoCard(
                   title: "Sipariş Özeti",
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ...order.items.map((item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("${item.productName} x${item.quantity}", 
-                                style: const TextStyle(fontSize: 15)),
-                            const Text("Hazırlanıyor", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                          ],
-                        ),
-                      )),
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text("${item.productName} x${item.quantity}",
+                                    style: const TextStyle(fontSize: 15)),
+                                const Text("Hazırlanıyor",
+                                    style: TextStyle(color: Colors.grey, fontSize: 12)),
+                              ],
+                            ),
+                          )),
                       const Divider(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text("Toplam Tutar", style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text("${order.totalAmount.toStringAsFixed(2)} TL", 
-                            style: const TextStyle(color: Color(0xFF1B4332), fontWeight: FontWeight.bold, fontSize: 18)),
+                          const Text("Toplam Tutar",
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text("${order.totalAmount.toStringAsFixed(2)} TL",
+                              style: const TextStyle(
+                                  color: Color(0xFF1B4332),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18)),
                         ],
                       ),
                     ],
@@ -197,11 +206,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ),
 
                 const SizedBox(height: 24),
-                const Text("Teslimat Süreci", 
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B4332))),
+                const Text("Teslimat Süreci",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1B4332))),
                 const SizedBox(height: 16),
-                
-                // Zaman Çizelgesi
+
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -219,13 +230,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _cancelLoading ? null : _cancelOrder,
                       icon: _cancelLoading
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2))
                           : const Icon(Icons.cancel_outlined),
                       label: Text(_cancelLoading ? 'İşleniyor...' : 'Siparişi İptal Et'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
                         side: const BorderSide(color: Colors.red, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15)),
                       ),
                     ),
                   ),
@@ -239,7 +254,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
-  // Yardımcı widget: Modern Bilgi Kartı
   Widget _buildInfoCard({required String title, required Widget child}) {
     return Container(
       width: double.infinity,
@@ -247,12 +261,21 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey)),
           const SizedBox(height: 12),
           child,
         ],

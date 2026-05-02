@@ -14,7 +14,7 @@ import 'restaurant_detail_screen.dart';
 class RescueHomeScreen extends StatefulWidget {
   final int initialIndex;
 
-  const RescueHomeScreen({super.key, this.initialIndex = 0});
+  const RescueHomeScreen({super.key, this.initialIndex = 0, required ApiClient apiClient});
 
   @override
   State<RescueHomeScreen> createState() => _RescueHomeScreenState();

@@ -157,7 +157,7 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
             // 3. KATEGORİ SEÇİMİ
             _buildLabel('Kategori'),
             DropdownButtonFormField<String>(
-              value: selectedCategory,
+              initialValue: selectedCategory,
               icon: const Icon(Icons.keyboard_arrow_down_rounded, color: primary),
               decoration: _inputDecoration(icon: Icons.category_outlined),
               items: ['Vegetables', 'Bakery', 'Dairy', 'Fruit', 'Meal']
