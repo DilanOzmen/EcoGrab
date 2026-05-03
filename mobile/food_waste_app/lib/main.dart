@@ -29,7 +29,9 @@ class FoodWasteApp extends StatelessWidget {
         '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/customer-home': (context) => RescueHomeScreen(apiClient: apiClient),
+        '/customer-home': (context) => RescueHomeScreen(
+              apiClient: apiClient,
+            ),
         '/seller-home': (context) => const SellerHomeScreen(),
       },
     );

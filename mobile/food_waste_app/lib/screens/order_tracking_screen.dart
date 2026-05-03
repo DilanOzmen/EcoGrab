@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import 'package:food_waste_app/core/app_colors.dart';
 import 'package:food_waste_app/data/models/customer_order.dart';
 import 'package:food_waste_app/data/models/tracking_step.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
@@ -51,13 +54,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       ),
       TrackingStep(
         title: 'Teslime Hazır',
-        description: 'Paketiniz sizi bekliyor!',
+        description: 'Paketiniz sizi bekliyor.',
         isCompleted: currentIndex > 2,
         isCurrent: currentIndex == 2,
       ),
       TrackingStep(
         title: 'Tamamlandı',
-        description: 'Afiyet olsun!',
+        description: 'Afiyet olsun.',
         isCompleted: currentIndex >= 3,
         isCurrent: currentIndex == 3,
       ),
@@ -73,17 +76,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Text('Siparişi İptal Et'),
-        content: const Text('Bu taptaze ürünlerin israf olmasını istemeyiz. Yine de iptal etmek istiyor musunuz?'),
+        content: const Text(
+          'Bu taptaze ürünlerin israf olmasını istemeyiz. Yine de iptal etmek istiyor musunuz?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgeç', style: TextStyle(color: Colors.grey)),
+            child: const Text('Vazgeç'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Evet, İptal Et', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Evet, İptal Et',
+              style: TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -92,15 +103,20 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     if (confirm != true) return;
 
     setState(() => _cancelLoading = true);
+
     try {
       await widget.apiClient.cancelOrder(widget.orderId);
+
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sipariş başarıyla iptal edildi.')),
       );
+
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString().replaceAll('ApiException: ', ''))),
       );
@@ -112,15 +128,18 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9F8),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(
-          'Sipariş Takibi #${widget.orderId}',
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.background,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: AppColors.textDark),
+        title: Text(
+          'Sipariş Takibi',
+          style: GoogleFonts.plusJakartaSans(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: 1,
@@ -131,11 +150,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
-  builder: (_) => RescueHomeScreen(
-    initialIndex: index == 0 ? 0 : 3,
-    apiClient: widget.apiClient,
-  ),
-),
+                builder: (_) => RescueHomeScreen(
+                  initialIndex: index == 0 ? 0 : 3,
+                  apiClient: widget.apiClient,
+                ),
+              ),
               (route) => false,
             );
           }
@@ -145,10 +164,21 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         future: _orderFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF1B4332)));
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            );
           }
+
           if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  snapshot.error.toString(),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
           }
 
           final order = snapshot.data!;
@@ -156,96 +186,32 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           final canCancel = _canCancel(order.status);
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Column(
-                    children: [
-                      TrackingStatusBadge(text: order.status),
-                      const SizedBox(height: 16),
-                      PickupCodeCard(code: '#${order.id}'),
-                    ],
+                _hero(order),
+                const SizedBox(height: 20),
+                _summaryCard(order),
+                const SizedBox(height: 22),
+                Text(
+                  'Teslimat Süreci',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textDark,
                   ),
                 ),
-                const SizedBox(height: 24),
-
-                _buildInfoCard(
-                  title: "Sipariş Özeti",
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ...order.items.map((item) => Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("${item.productName} x${item.quantity}",
-                                    style: const TextStyle(fontSize: 15)),
-                                const Text("Hazırlanıyor",
-                                    style: TextStyle(color: Colors.grey, fontSize: 12)),
-                              ],
-                            ),
-                          )),
-                      const Divider(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text("Toplam Tutar",
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text("${order.totalAmount.toStringAsFixed(2)} TL",
-                              style: const TextStyle(
-                                  color: Color(0xFF1B4332),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-                const Text("Teslimat Süreci",
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B4332))),
-                const SizedBox(height: 16),
-
+                const SizedBox(height: 14),
                 Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                  padding: const EdgeInsets.all(18),
+                  decoration: _cardDecoration(),
                   child: TrackingTimeline(steps: steps),
                 ),
-
                 if (canCancel) ...[
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: OutlinedButton.icon(
-                      onPressed: _cancelLoading ? null : _cancelOrder,
-                      icon: _cancelLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.cancel_outlined),
-                      label: Text(_cancelLoading ? 'İşleniyor...' : 'Siparişi İptal Et'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red, width: 1.5),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15)),
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 22),
+                  _cancelButton(),
                 ],
-                const SizedBox(height: 40),
               ],
             ),
           );
@@ -254,33 +220,185 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
-  Widget _buildInfoCard({required String title, required Widget child}) {
+  Widget _hero(CustomerOrder order) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        gradient: AppColors.splashGradient,
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4))
+            color: AppColors.primaryGreen.withValues(alpha: 0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey)),
-          const SizedBox(height: 12),
-          child,
+          Positioned(
+            right: -36,
+            top: -44,
+            child: Icon(
+              Icons.eco,
+              size: 150,
+              color: Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Sipariş #${order.id}',
+                style: GoogleFonts.manrope(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '${order.totalAmount.toStringAsFixed(2)} TL',
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  TrackingStatusBadge(text: order.status),
+                  const SizedBox(width: 12),
+                  PickupCodeCard(code: '#${order.id}'),
+                ],
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
-}
 
+  Widget _summaryCard(CustomerOrder order) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: _cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _cardTitle(Icons.receipt_long_rounded, 'Sipariş Özeti'),
+          const SizedBox(height: 14),
+          ...order.items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 9),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${item.productName} x${item.quantity}',
+                      style: GoogleFonts.manrope(
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Hazırlanıyor',
+                    style: GoogleFonts.manrope(
+                      color: AppColors.textSoft,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Divider(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Toplam Tutar',
+                style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textDark,
+                ),
+              ),
+              Text(
+                '${order.totalAmount.toStringAsFixed(2)} TL',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cancelButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: OutlinedButton.icon(
+        onPressed: _cancelLoading ? null : _cancelOrder,
+        icon: _cancelLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.cancel_outlined),
+        label: Text(_cancelLoading ? 'İşleniyor...' : 'Siparişi İptal Et'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.error,
+          side: BorderSide(color: AppColors.error.withValues(alpha: 0.45)),
+          backgroundColor: AppColors.error.withValues(alpha: 0.04),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _cardTitle(IconData icon, String title) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.primaryGreen, size: 20),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: GoogleFonts.plusJakartaSans(
+            color: AppColors.textDark,
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
+  }
+
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(24),
+      border: Border.all(color: AppColors.surfaceContainer),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.035),
+          blurRadius: 18,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    );
+  }
+}

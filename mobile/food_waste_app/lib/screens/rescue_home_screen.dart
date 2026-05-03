@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import 'package:food_waste_app/core/app_colors.dart';
 import 'package:food_waste_app/core/app_state.dart';
 import 'package:food_waste_app/data/models/customer_order.dart';
 import 'package:food_waste_app/data/models/product.dart';
 import 'package:food_waste_app/data/models/restaurant.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
+
 import 'login_screen.dart';
 import 'map_view_screen.dart';
 import 'order_tracking_screen.dart';
@@ -13,40 +17,81 @@ import 'restaurant_detail_screen.dart';
 
 class RescueHomeScreen extends StatefulWidget {
   final int initialIndex;
+  final ApiClient apiClient;
 
-  const RescueHomeScreen({super.key, this.initialIndex = 0, required ApiClient apiClient});
+  const RescueHomeScreen({
+    super.key,
+    this.initialIndex = 0,
+    required this.apiClient,
+  });
 
   @override
   State<RescueHomeScreen> createState() => _RescueHomeScreenState();
 }
 
-class _RescueHomeScreenState extends State<RescueHomeScreen> {
+class _RescueHomeScreenState extends State<RescueHomeScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
-  _HomeCategoryFilter _selectedHomeFilter = _HomeCategoryFilter.market;
+  _HomeCategoryFilter _selectedHomeFilter = _HomeCategoryFilter.all;
 
-  final ApiClient _apiClient = ApiClient();
-
+  late final ApiClient _apiClient;
   late Future<_HomeData> _homeFuture;
   late Future<List<CustomerOrder>> _ordersFuture;
+
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
 
   @override
   void initState() {
     super.initState();
+
+    _apiClient = widget.apiClient;
     _selectedIndex = widget.initialIndex;
+
     _homeFuture = _loadHomeData();
     _ordersFuture = _loadOrdersData();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.05),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Future<_HomeData> _loadHomeData([_HomeCategoryFilter? filter]) async {
     final selectedFilter = filter ?? _selectedHomeFilter;
+
+    final String? categoryFilter =
+        selectedFilter == _HomeCategoryFilter.all ? null : selectedFilter.apiValue;
+
     final results = await Future.wait([
-      _apiClient.getProducts(homeCategory: selectedFilter.apiValue),
-      _apiClient.getRestaurants(homeCategory: selectedFilter.apiValue),
+      _apiClient.getProducts(category: categoryFilter),
+      _apiClient.getRestaurants(),
     ]);
 
+    final products = results[0] as List<Product>;
+    final restaurants = results[1] as List<Restaurant>;
+
     return _HomeData(
-      products: results[0] as List<Product>,
-      restaurants: results[1] as List<Restaurant>,
+      products: products,
+      restaurants: restaurants,
     );
   }
 
@@ -57,14 +102,15 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
     ]);
 
     final merged = <CustomerOrder>[...results[0], ...results[1]];
-
     final unique = <int, CustomerOrder>{};
+
     for (final order in merged) {
       unique[order.id] = order;
     }
 
     final list = unique.values.toList();
     list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
     return list;
   }
 
@@ -85,9 +131,10 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
 
     if (!mounted) return;
 
-    Navigator.pushReplacement(
+    Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
     );
   }
 
@@ -100,8 +147,10 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              RestaurantDetailScreen(restaurant: detail, apiClient: _apiClient),
+          builder: (_) => RestaurantDetailScreen(
+            restaurant: detail,
+            apiClient: _apiClient,
+          ),
         ),
       );
     } catch (e) {
@@ -111,6 +160,31 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
         SnackBar(content: Text(e.toString().replaceAll('ApiException: ', ''))),
       );
     }
+  }
+
+  Future<void> _openProductDetail(Product product) async {
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProductDetailScreen(
+          product: product,
+          apiClient: _apiClient,
+        ),
+      ),
+    );
+
+    if (changed == true && mounted) {
+      _refreshHome();
+    }
+  }
+
+  void _selectHomeCategory(_HomeCategoryFilter filter) {
+    if (_selectedHomeFilter == filter) return;
+
+    setState(() {
+      _selectedHomeFilter = filter;
+      _homeFuture = _loadHomeData(filter);
+    });
   }
 
   Widget _buildBody() {
@@ -144,115 +218,94 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF1B4332)),
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
             );
           }
 
           if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Veriler yüklenemedi.\n${snapshot.error.toString().replaceAll('ApiException: ', '')}',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: _refreshHome,
-                      child: const Text('Tekrar Dene'),
-                    ),
-                  ],
-                ),
-              ),
+            return _buildErrorState(
+              title: 'Veriler yüklenemedi',
+              message: snapshot.error.toString().replaceAll('ApiException: ', ''),
             );
           }
 
           final data = snapshot.data;
 
           if (data == null) {
-            return const Center(child: Text('Veri bulunamadı.'));
+            return _buildEmptyState(
+              icon: Icons.eco_rounded,
+              title: 'Veri bulunamadı',
+              message: 'Şu anda gösterilecek içerik yok.',
+            );
           }
 
           return RefreshIndicator(
+            color: AppColors.primaryGreen,
             onRefresh: _refreshHome,
-            color: const Color(0xFF1B4332),
-            child: SingleChildScrollView(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTopHeader(),
-                  _buildCategories(),
-
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
-                    child: Text(
-                      'Flaş Ürünler',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B4332),
-                      ),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
+              children: [
+                FadeTransition(
+                  opacity: _fade,
+                  child: SlideTransition(
+                    position: _slide,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildTopHeader(),
+                        const SizedBox(height: 18),
+                        _buildHeroCard(data),
+                        const SizedBox(height: 22),
+                        _buildCategories(),
+                        const SizedBox(height: 22),
+                        _sectionTitle(
+                          _selectedHomeFilter == _HomeCategoryFilter.all
+                              ? 'Flaş Ürünler'
+                              : '${_selectedHomeFilter.label} Ürünleri',
+                          'Bugünün en avantajlı ürünleri',
+                        ),
+                        const SizedBox(height: 12),
+                        if (data.products.isEmpty)
+                          _buildEmptyState(
+                            icon: Icons.shopping_bag_outlined,
+                            title: 'Ürün bulunamadı',
+                            message: 'Bu kategoride listelenen ürün yok.',
+                          )
+                        else
+                          _buildHorizontalProductList(data.products),
+                        const SizedBox(height: 24),
+                        _sectionTitle(
+                          'Restoranlar',
+                          'Yakındaki kurtarılabilir ürünler',
+                        ),
+                        const SizedBox(height: 12),
+                        if (data.restaurants.isEmpty)
+                          _buildEmptyState(
+                            icon: Icons.storefront_outlined,
+                            title: 'Restoran bulunamadı',
+                            message: 'Şu anda listelenen restoran yok.',
+                          )
+                        else
+                          _buildHorizontalRestaurantList(data.restaurants),
+                        const SizedBox(height: 24),
+                        _sectionTitle('Tüm Ürünler', 'Kaçırmadan göz at'),
+                        const SizedBox(height: 12),
+                        if (data.products.isEmpty)
+                          _buildEmptyState(
+                            icon: Icons.inventory_2_outlined,
+                            title: 'Liste boş',
+                            message: 'Henüz ürün eklenmemiş.',
+                          )
+                        else
+                          ...data.products
+                              .take(8)
+                              .map((product) => _buildSimpleProductCard(product)),
+                      ],
                     ),
                   ),
-
-                  if (data.products.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text('Gösterilecek ürün bulunamadı.'),
-                    )
-                  else
-                    _buildVerticalProductCard(
-                      data.products.first,
-                      'https://images.unsplash.com/photo-1547496502-affa22d38842?w=800',
-                      '-%60 İNDİRİM',
-                    ),
-
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 30, 20, 10),
-                    child: Text(
-                      'Restoranlar',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B4332),
-                      ),
-                    ),
-                  ),
-
-                  if (data.restaurants.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text('Gösterilecek restoran bulunamadı.'),
-                    )
-                  else
-                    ...data.restaurants
-                        .take(5)
-                        .map((restaurant) => _buildRestaurantCard(restaurant)),
-
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 30, 20, 10),
-                    child: Text(
-                      'Diğer Ürünler',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B4332),
-                      ),
-                    ),
-                  ),
-
-                  ...data.products
-                      .skip(1)
-                      .take(6)
-                      .map((product) => _buildSimpleProductCard(product)),
-
-                  const SizedBox(height: 40),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
@@ -264,218 +317,364 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
     final fullName = AppState.currentUser?.fullName ?? 'Kullanıcı';
     final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-      child: Row(
-        children: [
-          const Icon(Icons.location_on, color: Color(0xFF2D6A4F), size: 22),
-          const SizedBox(width: 8),
-          const Text(
-            'Kadıköy, İstanbul',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: Color(0xFF1B4332),
+    return Row(
+      children: [
+        Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: AppColors.freshGreen.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'EcoGrab',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+              Text(
+                'Grab smart, waste less.',
+                style: GoogleFonts.manrope(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSoft,
+                ),
+              ),
+            ],
+          ),
+        ),
+        CircleAvatar(
+          radius: 19,
+          backgroundColor: AppColors.primaryGreen,
+          child: Text(
+            initial,
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const Spacer(),
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: const Color(0xFFD8F3DC),
-            child: Text(
-              initial,
-              style: const TextStyle(
-                color: Color(0xFF1B4332),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeroCard(_HomeData data) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: AppColors.splashGradient,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withValues(alpha: 0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -34,
+            top: -48,
+            child: Icon(
+              Icons.eco,
+              size: 155,
+              color: Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Bugün ne kurtarıyoruz?',
+                style: GoogleFonts.manrope(
+                  color: Colors.white.withValues(alpha: 0.84),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '${data.products.length} ürün hazır',
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${data.restaurants.length} restoran şu anda listede.',
+                style: GoogleFonts.manrope(
+                  color: Colors.white.withValues(alpha: 0.82),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  _heroMiniStat(
+                    Icons.shopping_bag_outlined,
+                    '${data.products.length}',
+                    'Ürün',
+                  ),
+                  const SizedBox(width: 10),
+                  _heroMiniStat(
+                    Icons.storefront_outlined,
+                    '${data.restaurants.length}',
+                    'Restoran',
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroMiniStat(IconData icon, String value, String label) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.13),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: GoogleFonts.manrope(
+                    color: Colors.white.withValues(alpha: 0.72),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCategories() {
     return SizedBox(
-      height: 110,
+      height: 92,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.only(left: 20, top: 10),
         children: [
           CategoryChip(
-            icon: Icons.storefront,
-            label: 'Market',
-            isSelected: _selectedHomeFilter == _HomeCategoryFilter.market,
-            onTap: () => _selectHomeCategory(_HomeCategoryFilter.market),
+            icon: Icons.grid_view_rounded,
+            label: 'Tümü',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.all,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.all),
           ),
           CategoryChip(
-            icon: Icons.coffee,
-            label: 'Kafe',
-            isSelected: _selectedHomeFilter == _HomeCategoryFilter.kafe,
-            onTap: () => _selectHomeCategory(_HomeCategoryFilter.kafe),
+            icon: Icons.eco_rounded,
+            label: 'Sebze',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.vegetables,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.vegetables),
           ),
           CategoryChip(
-            icon: Icons.bakery_dining,
+            icon: Icons.bakery_dining_rounded,
             label: 'Fırın',
-            isSelected: _selectedHomeFilter == _HomeCategoryFilter.firin,
-            onTap: () => _selectHomeCategory(_HomeCategoryFilter.firin),
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.bakery,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.bakery),
           ),
           CategoryChip(
-            icon: Icons.local_drink,
-            label: 'İçecek',
-            isSelected: _selectedHomeFilter == _HomeCategoryFilter.icecek,
-            onTap: () => _selectHomeCategory(_HomeCategoryFilter.icecek),
+            icon: Icons.local_drink_rounded,
+            label: 'Süt',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.dairy,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.dairy),
+          ),
+          CategoryChip(
+            icon: Icons.apple_rounded,
+            label: 'Meyve',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.fruit,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.fruit),
+          ),
+          CategoryChip(
+            icon: Icons.restaurant_rounded,
+            label: 'Yemek',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.meal,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.meal),
           ),
         ],
       ),
     );
   }
 
-  void _selectHomeCategory(_HomeCategoryFilter filter) {
-    if (_selectedHomeFilter == filter) {
-      return;
-    }
-
-    final future = _loadHomeData(filter);
-    setState(() {
-      _selectedHomeFilter = filter;
-      _homeFuture = future;
-    });
-  }
-
-  Widget _buildVerticalProductCard(
-    Product product,
-    String imageUrl,
-    String tag,
-  ) {
-    return GestureDetector(
-      onTap: () async {
-        final changed = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                ProductDetailScreen(product: product, apiClient: _apiClient),
-          ),
-        );
-
-        if (changed == true && mounted) {
-          _refreshHome();
-        }
-      },
-      child: Container(
-        width: double.infinity,
-        height: 220,
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          image: DecorationImage(
-            image: NetworkImage(imageUrl),
-            fit: BoxFit.cover,
+  Widget _sectionTitle(String title, String subtitle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.plusJakartaSans(
+            color: AppColors.textDark,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
           ),
         ),
-        child: Stack(
-          children: [
-            Container(
+        Text(
+          subtitle,
+          style: GoogleFonts.manrope(
+            color: AppColors.textSoft,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHorizontalProductList(List<Product> products) {
+    return SizedBox(
+      height: 210,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: products.take(8).length,
+        separatorBuilder: (_, __) => const SizedBox(width: 14),
+        itemBuilder: (context, index) {
+          final product = products[index];
+
+          return GestureDetector(
+            onTap: () => _openProductDetail(product),
+            child: Container(
+              width: 220,
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
+                gradient: AppColors.editorialGradient,
                 borderRadius: BorderRadius.circular(28),
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  colors: [Colors.black.withAlpha(160), Colors.transparent],
-                ),
-              ),
-            ),
-            Positioned(
-              top: 15,
-              left: 15,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.orange[900],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  tag,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.20),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
-                ),
+                ],
               ),
-            ),
-            Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Stack(
                 children: [
-                  Text(
-                    product.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                  Positioned(
+                    right: -28,
+                    bottom: -35,
+                    child: Icon(
+                      Icons.shopping_basket_rounded,
+                      size: 130,
+                      color: Colors.white.withValues(alpha: 0.08),
                     ),
                   ),
-                  Text(
-                    '${product.restaurantName} • Stok: ${product.stock}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    child: _discountBadge(product.discountPercent),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontSize: 19,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${product.restaurantName} • Stok: ${product.stock}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.manrope(
+                            color: Colors.white.withValues(alpha: 0.76),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          '₺${product.discountedPrice.toStringAsFixed(2)}',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildRestaurantCard(Restaurant restaurant) {
-    return GestureDetector(
-      onTap: () => _openRestaurantDetail(restaurant),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(12),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 62,
-              height: 62,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD8F3DC),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Icon(
-                Icons.storefront,
-                color: Color(0xFF1B4332),
-                size: 30,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
+  Widget _buildHorizontalRestaurantList(List<Restaurant> restaurants) {
+    return SizedBox(
+      height: 150,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: restaurants.take(8).length,
+        separatorBuilder: (_, __) => const SizedBox(width: 14),
+        itemBuilder: (context, index) {
+          final restaurant = restaurants[index];
+
+          return GestureDetector(
+            onTap: () => _openRestaurantDetail(restaurant),
+            child: Container(
+              width: 190,
+              padding: const EdgeInsets.all(16),
+              decoration: _cardDecoration(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _iconBox(Icons.storefront_rounded),
+                  const Spacer(),
                   Text(
                     restaurant.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.textDark,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -483,13 +682,34 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
                     '${restaurant.city} • ${restaurant.address}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    style: GoogleFonts.manrope(
+                      color: AppColors.textSoft,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFF1B4332)),
-          ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _discountBadge(double percent) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.secondaryOrange,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '-%${percent.toInt()}',
+        style: GoogleFonts.manrope(
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+          fontSize: 12,
         ),
       ),
     );
@@ -497,44 +717,14 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
 
   Widget _buildSimpleProductCard(Product product) {
     return GestureDetector(
-      onTap: () async {
-        final changed = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                ProductDetailScreen(product: product, apiClient: _apiClient),
-          ),
-        );
-
-        if (changed == true && mounted) {
-          _refreshHome();
-        }
-      },
+      onTap: () => _openProductDetail(product),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(10),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(15),
+        decoration: _cardDecoration(),
         child: Row(
           children: [
-            Container(
-              width: 62,
-              height: 62,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F5F7),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Icon(Icons.fastfood, color: Color(0xFF1B4332)),
-            ),
+            _iconBox(Icons.fastfood_rounded),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -542,24 +732,32 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
                 children: [
                   Text(
                     product.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.textDark,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 5),
                   Text(
                     '${product.restaurantName} • Stok: ${product.stock}',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    style: GoogleFonts.manrope(
+                      color: AppColors.textSoft,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
             ),
             Text(
               '₺${product.discountedPrice.toStringAsFixed(2)}',
-              style: const TextStyle(
-                color: Color(0xFF1B4332),
-                fontWeight: FontWeight.bold,
+              style: GoogleFonts.plusJakartaSans(
+                color: AppColors.primaryGreen,
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
               ),
             ),
           ],
@@ -569,102 +767,68 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
   }
 
   Widget _buildOrdersTab() {
-    return FutureBuilder<List<CustomerOrder>>(
-      future: _ordersFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF1B4332)),
-          );
-        }
+    return SafeArea(
+      child: FutureBuilder<List<CustomerOrder>>(
+        future: _ordersFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            );
+          }
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              snapshot.error.toString().replaceAll('ApiException: ', ''),
-              textAlign: TextAlign.center,
-            ),
-          );
-        }
+          if (snapshot.hasError) {
+            return _buildErrorState(
+              title: 'Siparişler yüklenemedi',
+              message: snapshot.error.toString().replaceAll('ApiException: ', ''),
+            );
+          }
 
-        final orders = snapshot.data ?? [];
+          final orders = snapshot.data ?? [];
 
-        if (orders.isEmpty) {
+          if (orders.isEmpty) {
+            return RefreshIndicator(
+              color: AppColors.primaryGreen,
+              onRefresh: _refreshOrders,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                children: [
+                  const SizedBox(height: 160),
+                  _buildEmptyState(
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Henüz sipariş yok',
+                    message: 'Rezervasyonların ve siparişlerin burada görünecek.',
+                  ),
+                ],
+              ),
+            );
+          }
+
           return RefreshIndicator(
+            color: AppColors.primaryGreen,
             onRefresh: _refreshOrders,
-            child: ListView(
+            child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
-              children: const [
-                SizedBox(height: 220),
-                Center(
-                  child: Text('Henüz sipariş veya rezervasyon bulunmuyor.'),
-                ),
-              ],
+              padding: const EdgeInsets.all(20),
+              itemCount: orders.length,
+              itemBuilder: (context, index) => _buildOrderCard(orders[index]),
             ),
           );
-        }
-
-        return RefreshIndicator(
-          onRefresh: _refreshOrders,
-          child: ListView.builder(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(20),
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              final order = orders[index];
-              return _buildModernOrderCard(order);
-            },
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 
-  Widget _buildModernOrderCard(CustomerOrder order) {
-    // Duruma göre renk ve metin belirleyelim
-    Color statusColor;
-    String statusText;
-    
-    switch (order.status.toLowerCase()) {
-      case 'cancelled':
-      case 'iptal':
-        statusColor = Colors.redAccent;
-        statusText = "İptal Edildi";
-        break;
-      case 'completed':
-        statusColor = const Color(0xFF2D6A4F);
-        statusText = "Teslim Edildi";
-        break;
-      case 'readyforpickup':
-        statusColor = Colors.orange;
-        statusText = "Teslime Hazır";
-        break;
-      case 'confirmed':
-        statusColor = Colors.blue;
-        statusText = "Onaylandı";
-        break;
-      default:
-        statusColor = const Color(0xFF1B4332);
-        statusText = "Bekliyor";
-    }
-
+  Widget _buildOrderCard(CustomerOrder order) {
+    final status = _statusInfo(order.status);
     final itemNames = order.items.map((i) => i.productName).join(', ');
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(15),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          )
-        ],
-      ),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: _cardDecoration(),
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         onTap: () async {
           final changed = await Navigator.push<bool>(
             context,
@@ -675,132 +839,245 @@ class _RescueHomeScreenState extends State<RescueHomeScreen> {
               ),
             ),
           );
+
           if (changed == true && mounted) {
             _refreshOrders();
           }
         },
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                // Sol taraftaki renkli durum şeridi
-                Container(width: 6, color: statusColor),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Sipariş #${order.id}",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey,
-                                fontSize: 13,
-                              ),
-                            ),
-                            _statusBadge(statusText, statusColor),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          itemNames.isNotEmpty ? itemNames : 'Ürün bilgisi yok',
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1B4332),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "₺${order.totalAmount.toStringAsFixed(2)}",
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF2D6A4F),
-                              ),
-                            ),
-                            const Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFF1B4332)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 6,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: status.color,
+                  borderRadius: BorderRadius.circular(999),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Sipariş #${order.id}',
+                      style: GoogleFonts.manrope(
+                        color: AppColors.textSoft,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      itemNames.isNotEmpty ? itemNames : 'Ürün bilgisi yok',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                        color: AppColors.textDark,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '₺${order.totalAmount.toStringAsFixed(2)}',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: AppColors.primaryGreen,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _statusBadge(status.text, status.color),
+            ],
           ),
         ),
       ),
     );
   }
+
+  _StatusInfo _statusInfo(String status) {
+    switch (status.toLowerCase()) {
+      case 'cancelled':
+      case 'iptal':
+        return const _StatusInfo('İptal Edildi', Colors.redAccent);
+      case 'completed':
+        return const _StatusInfo('Teslim Edildi', AppColors.primaryGreen);
+      case 'readyforpickup':
+        return const _StatusInfo('Teslime Hazır', Colors.orange);
+      case 'confirmed':
+        return const _StatusInfo('Onaylandı', Colors.blue);
+      default:
+        return const _StatusInfo('Bekliyor', AppColors.primaryContainer);
+    }
+  }
+
   Widget _statusBadge(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withAlpha(30),
-        borderRadius: BorderRadius.circular(10),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: GoogleFonts.manrope(
           color: color,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
   Widget _buildBottomNav() {
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: (i) {
-        setState(() {
-          _selectedIndex = i;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
 
-          if (i == 2) {
-            _ordersFuture = _loadOrdersData();
-          }
-        });
-      },
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFF1B4332),
-      unselectedItemColor: Colors.grey[400],
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_filled),
-          label: 'Anasayfa',
+            if (index == 2) {
+              _ordersFuture = _loadOrdersData();
+            }
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        selectedItemColor: AppColors.primaryGreen,
+        unselectedItemColor: AppColors.textSoft.withValues(alpha: 0.65),
+        selectedLabelStyle: GoogleFonts.manrope(
+          fontWeight: FontWeight.w900,
+          fontSize: 11,
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.map_outlined),
-          label: 'Harita',
+        unselectedLabelStyle: GoogleFonts.manrope(
+          fontWeight: FontWeight.w700,
+          fontSize: 11,
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.receipt_long_outlined),
-          label: 'Siparişler',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profil',
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_filled),
+            label: 'Anasayfa',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map_outlined),
+            label: 'Harita',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_outlined),
+            label: 'Siparişler',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'Profil',
+          ),
+        ],
+      ),
+    );
+  }
+
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(24),
+      border: Border.all(color: AppColors.surfaceContainer),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.035),
+          blurRadius: 18,
+          offset: const Offset(0, 8),
         ),
       ],
+    );
+  }
+
+  Widget _iconBox(IconData icon) {
+    return Container(
+      width: 58,
+      height: 58,
+      decoration: BoxDecoration(
+        color: AppColors.freshGreen.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Icon(icon, color: AppColors.primaryGreen, size: 27),
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: _cardDecoration(),
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.primaryGreen, size: 42),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(
+              color: AppColors.textDark,
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(
+              color: AppColors.textSoft,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState({
+    required String title,
+    required String message,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: _buildEmptyState(
+          icon: Icons.error_outline_rounded,
+          title: title,
+          message: message,
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBFBFB),
+      backgroundColor: AppColors.background,
       body: _buildBody(),
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -824,32 +1101,41 @@ class CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 18),
-      child: Column(
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: onTap,
-            child: Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFFD8F3DC)
-                    : const Color(0xFFF3F5F7),
-                borderRadius: BorderRadius.circular(20),
+      padding: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
+        child: Container(
+          width: 82,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primaryGreen : AppColors.surface,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color:
+                  isSelected ? AppColors.primaryGreen : AppColors.surfaceContainer,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? Colors.white : AppColors.primaryGreen,
+                size: 24,
               ),
-              child: Icon(icon, color: const Color(0xFF1B4332), size: 26),
-            ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: GoogleFonts.manrope(
+                  color: isSelected ? Colors.white : AppColors.textDark,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -859,18 +1145,44 @@ class _HomeData {
   final List<Product> products;
   final List<Restaurant> restaurants;
 
-  const _HomeData({required this.products, required this.restaurants});
+  const _HomeData({
+    required this.products,
+    required this.restaurants,
+  });
 }
 
-enum _HomeCategoryFilter { market, kafe, firin, icecek }
+class _StatusInfo {
+  final String text;
+  final Color color;
+
+  const _StatusInfo(this.text, this.color);
+}
+
+enum _HomeCategoryFilter {
+  all,
+  vegetables,
+  bakery,
+  dairy,
+  fruit,
+  meal,
+}
 
 extension on _HomeCategoryFilter {
+  String get label => switch (this) {
+        _HomeCategoryFilter.all => 'Tüm',
+        _HomeCategoryFilter.vegetables => 'Sebze',
+        _HomeCategoryFilter.bakery => 'Fırın',
+        _HomeCategoryFilter.dairy => 'Süt',
+        _HomeCategoryFilter.fruit => 'Meyve',
+        _HomeCategoryFilter.meal => 'Yemek',
+      };
+
   String get apiValue => switch (this) {
-    _HomeCategoryFilter.market => 'market',
-    _HomeCategoryFilter.kafe => 'kafe',
-    _HomeCategoryFilter.firin => 'firin',
-    _HomeCategoryFilter.icecek => 'icecek',
-  };
+        _HomeCategoryFilter.all => '',
+        _HomeCategoryFilter.vegetables => 'Vegetables',
+        _HomeCategoryFilter.bakery => 'Bakery',
+        _HomeCategoryFilter.dairy => 'Dairy',
+        _HomeCategoryFilter.fruit => 'Fruit',
+        _HomeCategoryFilter.meal => 'Meal',
+      };
 }
-
-
