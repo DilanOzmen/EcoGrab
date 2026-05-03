@@ -369,7 +369,7 @@ class StockCollectionSection extends StatelessWidget {
                     'List Product',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
@@ -383,3 +383,4 @@ class StockCollectionSection extends StatelessWidget {
     );
   }
 }
+

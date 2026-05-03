@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import 'package:food_waste_app/core/app_assets.dart';
+import 'package:food_waste_app/core/app_colors.dart';
+import 'package:food_waste_app/core/app_spacing.dart';
 import 'package:food_waste_app/core/app_state.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
 import 'package:food_waste_app/screens/register_screen.dart';
@@ -11,13 +15,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  static const primary = Color(0xFF0F5238);
-  static const background = Color(0xFFF8FAF8);
-  static const inputBg = Color(0xFFECEFED);
-  static const textDark = Color(0xFF191C1B);
-  static const textSoft = Color(0xFF707973);
-
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _apiClient = ApiClient();
 
@@ -27,8 +26,64 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
   bool isPasswordHidden = true;
 
+  late final AnimationController _introController;
+  late final AnimationController _sparkleController;
+
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+  late final Animation<double> _sparkleOpacity;
+  late final Animation<double> _sparkleScale;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _introController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 750),
+    );
+
+    _sparkleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1300),
+    )..repeat(reverse: true);
+
+    _fade = CurvedAnimation(
+      parent: _introController,
+      curve: Curves.easeOut,
+    );
+
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _introController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    _sparkleOpacity = Tween<double>(begin: 0.25, end: 0.75).animate(
+      CurvedAnimation(
+        parent: _sparkleController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _sparkleScale = Tween<double>(begin: 0.92, end: 1.08).animate(
+      CurvedAnimation(
+        parent: _sparkleController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _introController.forward();
+  }
+
   @override
   void dispose() {
+    _introController.dispose();
+    _sparkleController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -80,18 +135,24 @@ class _LoginScreenState extends State<LoginScreen> {
   }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.manrope(color: textSoft, fontSize: 13),
-      prefixIcon: Icon(icon, color: textSoft, size: 20),
+      hintStyle: GoogleFonts.manrope(
+        color: AppColors.textSoft,
+        fontSize: 13,
+      ),
+      prefixIcon: Icon(icon, color: AppColors.textSoft, size: 20),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: inputBg,
+      fillColor: AppColors.surfaceContainer.withValues(alpha: 0.75),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: primary, width: 1.4),
+        borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+        borderSide: const BorderSide(
+          color: AppColors.primaryGreen,
+          width: 1.4,
+        ),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
@@ -100,50 +161,133 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 390),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _buildLogo(),
-                    const SizedBox(height: 34),
-                    _buildTitle(),
-                    const SizedBox(height: 32),
-                    _buildFields(),
-                    const SizedBox(height: 26),
-                    _buildLoginButton(),
-                    const SizedBox(height: 26),
-                    _buildRegisterText(),
-                    const SizedBox(height: 26),
-                    _buildSecurityBadge(),
-                  ],
+        child: Stack(
+          children: [
+            _backgroundLeaves(),
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding,
+                  vertical: 24,
+                ),
+                child: FadeTransition(
+                  opacity: _fade,
+                  child: SlideTransition(
+                    position: _slide,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 390),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            _buildLogo(),
+                            const SizedBox(height: 22),
+                            _buildTitle(),
+                            const SizedBox(height: 26),
+                            _buildFields(),
+                            const SizedBox(height: 24),
+                            _buildLoginButton(),
+                            const SizedBox(height: 22),
+                            _buildRegisterText(),
+                            const SizedBox(height: 20),
+                            _buildSecurityBadge(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildLogo() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+  Widget _backgroundLeaves() {
+    return Stack(
       children: [
-        const Icon(Icons.eco, color: primary, size: 18),
-        const SizedBox(width: 6),
-        Text(
-          'The Living Larder',
-          style: GoogleFonts.plusJakartaSans(
-            color: primary,
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
+        Positioned(
+          top: -55,
+          right: -55,
+          child: Icon(
+            Icons.eco,
+            size: 210,
+            color: AppColors.freshGreen.withValues(alpha: 0.12),
+          ),
+        ),
+        Positioned(
+          bottom: -90,
+          left: -100,
+          child: Icon(
+            Icons.eco,
+            size: 270,
+            color: AppColors.primaryGreen.withValues(alpha: 0.08),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLogo() {
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            AnimatedBuilder(
+              animation: _sparkleController,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _sparkleScale.value,
+                  child: Opacity(
+                    opacity: _sparkleOpacity.value,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.freshGreen.withValues(alpha: 0.12),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Image.asset(
+              AppAssets.ecograbLogo,
+              width: 118,
+              height: 118,
+              fit: BoxFit.contain,
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: 'ECO',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.primaryGreen,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              TextSpan(
+                text: 'GRAB',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.freshGreen,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -157,17 +301,18 @@ class _LoginScreenState extends State<LoginScreen> {
           'Hoş Geldiniz',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 30,
-            fontWeight: FontWeight.w800,
-            color: textDark,
+            fontWeight: FontWeight.w900,
+            color: AppColors.textDark,
           ),
         ),
         const SizedBox(height: 6),
         Text(
-          'Hesabınıza giriş yapın.',
+          'Akıllı alışveriş yapın, israfı azaltın.',
+          textAlign: TextAlign.center,
           style: GoogleFonts.manrope(
             fontSize: 13,
-            color: textSoft,
-            fontWeight: FontWeight.w500,
+            color: AppColors.textSoft,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -210,7 +355,7 @@ class _LoginScreenState extends State<LoginScreen> {
             suffixIcon: IconButton(
               icon: Icon(
                 isPasswordHidden ? Icons.visibility : Icons.visibility_off,
-                color: textSoft,
+                color: AppColors.textSoft,
                 size: 20,
               ),
               onPressed: () {
@@ -230,50 +375,45 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLoginButton() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 56,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [primary, Color(0xFF2D6A4F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: AppColors.editorialGradient,
+          borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryGreen.withValues(alpha: 0.22),
+              blurRadius: 22,
+              offset: const Offset(0, 9),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: primary.withValues(alpha: 0.20),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
+        child: ElevatedButton(
+          onPressed: isLoading ? null : _login,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
           ),
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: isLoading ? null : _login,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Text(
+                  'Giriş Yap',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
         ),
-        child: isLoading
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-            : Text(
-                'Giriş Yap',
-                style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
       ),
     );
   }
@@ -289,7 +429,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: RichText(
         text: TextSpan(
           style: GoogleFonts.manrope(
-            color: textSoft,
+            color: AppColors.textSoft,
             fontSize: 12,
           ),
           children: const [
@@ -297,8 +437,8 @@ class _LoginScreenState extends State<LoginScreen> {
             TextSpan(
               text: 'Hesap Oluştur',
               style: TextStyle(
-                color: primary,
-                fontWeight: FontWeight.w800,
+                color: AppColors.primaryGreen,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ],
@@ -311,13 +451,13 @@ class _LoginScreenState extends State<LoginScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFB1F0CE).withValues(alpha: 0.35),
+        color: AppColors.freshGreen.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        'JWT-tabanlı güvenli oturum yönetimi',
+        'Güvenli oturum yönetimi',
         style: GoogleFonts.manrope(
-          color: primary,
+          color: AppColors.primaryGreen,
           fontSize: 11,
           fontWeight: FontWeight.w800,
         ),
@@ -326,15 +466,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _label(String text) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        text,
-        style: GoogleFonts.manrope(
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-          color: textDark,
-        ),
+    return Text(
+      text,
+      style: GoogleFonts.manrope(
+        fontSize: 12,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textDark,
       ),
     );
   }

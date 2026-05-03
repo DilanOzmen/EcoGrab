@@ -461,3 +461,5 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     );
   }
 }
+
+

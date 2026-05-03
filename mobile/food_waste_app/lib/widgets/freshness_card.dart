@@ -30,3 +30,4 @@ class FreshnessCard extends StatelessWidget {
     );
   }
 }
+

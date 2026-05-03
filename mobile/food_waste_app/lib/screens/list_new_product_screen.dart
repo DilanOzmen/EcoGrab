@@ -365,3 +365,4 @@ class _ListNewProductScreenState extends State<ListNewProductScreen> {
     child: Text(text, style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: textDark)),
   );
 }
+

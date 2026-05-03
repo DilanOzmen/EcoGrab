@@ -872,3 +872,5 @@ extension on _HomeCategoryFilter {
     _HomeCategoryFilter.icecek => 'icecek',
   };
 }
+
+

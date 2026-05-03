@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import 'package:food_waste_app/core/app_theme.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
 
 import 'package:food_waste_app/screens/splash_screen.dart';
@@ -18,32 +18,12 @@ class FoodWasteApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const background = Color(0xFFF8FAF8);
-    const primary = Color(0xFF1B4332);
-    const onSurface = Color(0xFF191C1B);
-
     final apiClient = ApiClient();
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Food Waste App',
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: background,
-        colorScheme: const ColorScheme.light(
-          primary: primary,
-          surface: background,
-          onSurface: onSurface,
-        ),
-        textTheme: GoogleFonts.manropeTextTheme().copyWith(
-          headlineLarge: GoogleFonts.plusJakartaSans(),
-          headlineMedium: GoogleFonts.plusJakartaSans(),
-          headlineSmall: GoogleFonts.plusJakartaSans(),
-          titleLarge: GoogleFonts.plusJakartaSans(),
-          titleMedium: GoogleFonts.plusJakartaSans(),
-          titleSmall: GoogleFonts.plusJakartaSans(),
-        ),
-      ),
+      title: 'EcoGrab',
+      theme: AppTheme.lightTheme(),
       initialRoute: '/splash',
       routes: {
         '/splash': (context) => const SplashScreen(),

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import 'package:food_waste_app/core/app_assets.dart';
+import 'package:food_waste_app/core/app_colors.dart';
+import 'package:food_waste_app/core/app_spacing.dart';
 import 'package:food_waste_app/core/app_state.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
 
@@ -10,13 +14,8 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
-  static const primary = Color(0xFF0F5238);
-  static const background = Color(0xFFF8FAF8);
-  static const inputBg = Color(0xFFECEFED);
-  static const textDark = Color(0xFF191C1B);
-  static const textSoft = Color(0xFF707973);
-
+class _RegisterScreenState extends State<RegisterScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _apiClient = ApiClient();
 
@@ -30,8 +29,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool acceptedTerms = false;
   bool isLoading = false;
 
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+
+    _controller.forward();
+  }
+
   @override
   void dispose() {
+    _controller.dispose();
     _fullNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -93,18 +118,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.manrope(color: textSoft, fontSize: 13),
-      prefixIcon: Icon(icon, color: textSoft, size: 20),
+      hintStyle: GoogleFonts.manrope(
+        color: AppColors.textSoft,
+        fontSize: 13,
+      ),
+      prefixIcon: Icon(icon, color: AppColors.textSoft, size: 20),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: inputBg,
+      fillColor: AppColors.surfaceContainer.withValues(alpha: 0.75),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: primary, width: 1.4),
+        borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+        borderSide: const BorderSide(
+          color: AppColors.primaryGreen,
+          width: 1.4,
+        ),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
@@ -113,52 +144,111 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 390),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _buildLogo(),
-                    const SizedBox(height: 28),
-                    _buildTitle(),
-                    const SizedBox(height: 26),
-                    _buildRoleSection(),
-                    const SizedBox(height: 22),
-                    _buildFields(),
-                    const SizedBox(height: 16),
-                    _buildTerms(),
-                    const SizedBox(height: 22),
-                    _buildRegisterButton(),
-                    const SizedBox(height: 28),
-                    _buildLoginText(),
-                  ],
+        child: Stack(
+          children: [
+            _backgroundLeaves(),
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding,
+                  vertical: 24,
+                ),
+                child: FadeTransition(
+                  opacity: _fade,
+                  child: SlideTransition(
+                    position: _slide,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 390),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            _buildLogo(),
+                            const SizedBox(height: 16),
+                            _buildTitle(),
+                            const SizedBox(height: 22),
+                            _buildRoleSection(),
+                            const SizedBox(height: 20),
+                            _buildFields(),
+                            const SizedBox(height: 14),
+                            _buildTerms(),
+                            const SizedBox(height: 20),
+                            _buildRegisterButton(),
+                            const SizedBox(height: 22),
+                            _buildLoginText(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildLogo() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+  Widget _backgroundLeaves() {
+    return Stack(
       children: [
-        const Icon(Icons.eco, color: primary, size: 18),
-        const SizedBox(width: 6),
-        Text(
-          'The Living Larder',
-          style: GoogleFonts.plusJakartaSans(
-            color: primary,
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
+        Positioned(
+          top: -65,
+          right: -65,
+          child: Icon(
+            Icons.eco,
+            size: 220,
+            color: AppColors.freshGreen.withValues(alpha: 0.10),
+          ),
+        ),
+        Positioned(
+          bottom: -90,
+          left: -100,
+          child: Icon(
+            Icons.eco,
+            size: 270,
+            color: AppColors.primaryGreen.withValues(alpha: 0.07),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLogo() {
+    return Column(
+      children: [
+        Image.asset(
+          AppAssets.ecograbLogo,
+          width: 92,
+          height: 92,
+          fit: BoxFit.contain,
+        ),
+        const SizedBox(height: 4),
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: 'ECO',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.primaryGreen,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.4,
+                ),
+              ),
+              TextSpan(
+                text: 'GRAB',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.freshGreen,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.4,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -169,21 +259,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       children: [
         Text(
-          'Hoş Geldiniz',
+          'Hesap Oluştur',
           style: GoogleFonts.plusJakartaSans(
-            fontSize: 30,
-            fontWeight: FontWeight.w800,
-            color: textDark,
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+            color: AppColors.textDark,
           ),
         ),
         const SizedBox(height: 6),
         Text(
-          'Sürdürülebilir bir gelecek için ilk adımı atın.',
+          'Size uygun hesap türünü seçin ve başlayın.',
           textAlign: TextAlign.center,
           style: GoogleFonts.manrope(
             fontSize: 13,
-            color: textSoft,
-            fontWeight: FontWeight.w500,
+            color: AppColors.textSoft,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -195,36 +285,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _label('Hesap Türü'),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF2F4F2),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              _roleButton(
-                text: 'Müşteri',
-                icon: Icons.person,
-                selected: isCustomer,
-                onTap: () => setState(() => isCustomer = true),
-              ),
-              _roleButton(
-                text: 'Satıcı',
-                icon: Icons.storefront,
-                selected: !isCustomer,
-                onTap: () => setState(() => isCustomer = false),
-              ),
-            ],
-          ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            _roleCard(
+              title: 'Müşteri',
+              subtitle: 'Ürün kurtar',
+              icon: Icons.shopping_bag_outlined,
+              selected: isCustomer,
+              onTap: () => setState(() => isCustomer = true),
+            ),
+            const SizedBox(width: 12),
+            _roleCard(
+              title: 'Satıcı',
+              subtitle: 'Ürün listele',
+              icon: Icons.storefront_outlined,
+              selected: !isCustomer,
+              onTap: () => setState(() => isCustomer = false),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _roleButton({
-    required String text,
+  Widget _roleCard({
+    required String title,
+    required String subtitle,
     required IconData icon,
     required bool selected,
     required VoidCallback onTap,
@@ -233,23 +320,53 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 11),
+          duration: const Duration(milliseconds: 220),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
+            gradient: selected ? AppColors.editorialGradient : null,
+            color: selected ? null : AppColors.surfaceContainer.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected
+                  ? AppColors.primaryGreen
+                  : AppColors.surfaceContainer,
+              width: 1.2,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.18),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : [],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Column(
             children: [
-              Icon(icon, size: 17, color: selected ? primary : textSoft),
-              const SizedBox(width: 6),
+              Icon(
+                icon,
+                color: selected ? Colors.white : AppColors.primaryGreen,
+                size: 26,
+              ),
+              const SizedBox(height: 8),
               Text(
-                text,
+                title,
+                style: GoogleFonts.plusJakartaSans(
+                  color: selected ? Colors.white : AppColors.textDark,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
                 style: GoogleFonts.manrope(
-                  fontSize: 12,
-                  color: selected ? primary : textSoft,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  color: selected
+                      ? Colors.white.withValues(alpha: 0.82)
+                      : AppColors.textSoft,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -278,7 +395,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             return null;
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         _label('E-posta'),
         const SizedBox(height: 8),
         TextFormField(
@@ -298,7 +415,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             return null;
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         _label('Telefon'),
         const SizedBox(height: 8),
         TextFormField(
@@ -315,7 +432,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             return null;
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         _label('Şifre'),
         const SizedBox(height: 8),
         TextFormField(
@@ -327,7 +444,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             suffixIcon: IconButton(
               icon: Icon(
                 isPasswordHidden ? Icons.visibility : Icons.visibility_off,
-                color: textSoft,
+                color: AppColors.textSoft,
                 size: 20,
               ),
               onPressed: () {
@@ -355,7 +472,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         Checkbox(
           value: acceptedTerms,
-          activeColor: primary,
+          activeColor: AppColors.primaryGreen,
           visualDensity: VisualDensity.compact,
           onChanged: (value) {
             setState(() => acceptedTerms = value ?? false);
@@ -368,7 +485,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               'Kullanım Şartları ve Gizlilik Politikası’nı okudum ve kabul ediyorum.',
               style: GoogleFonts.manrope(
                 fontSize: 11,
-                color: textSoft,
+                color: AppColors.textSoft,
                 height: 1.4,
               ),
             ),
@@ -379,50 +496,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildRegisterButton() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 56,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [primary, Color(0xFF2D6A4F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: AppColors.editorialGradient,
+          borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryGreen.withValues(alpha: 0.22),
+              blurRadius: 22,
+              offset: const Offset(0, 9),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: primary.withValues(alpha: 0.20),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
+        child: ElevatedButton(
+          onPressed: isLoading ? null : _register,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
           ),
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: isLoading ? null : _register,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Text(
+                  'Hesap Oluştur',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
         ),
-        child: isLoading
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-            : Text(
-                'Hesap Oluştur',
-                style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
       ),
     );
   }
@@ -433,7 +545,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: RichText(
         text: TextSpan(
           style: GoogleFonts.manrope(
-            color: textSoft,
+            color: AppColors.textSoft,
             fontSize: 12,
           ),
           children: const [
@@ -441,8 +553,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             TextSpan(
               text: 'Giriş Yap',
               style: TextStyle(
-                color: primary,
-                fontWeight: FontWeight.w800,
+                color: AppColors.primaryGreen,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ],
@@ -459,7 +571,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         style: GoogleFonts.manrope(
           fontSize: 12,
           fontWeight: FontWeight.w800,
-          color: textDark,
+          color: AppColors.textDark,
         ),
       ),
     );

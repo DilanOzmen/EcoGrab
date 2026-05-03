@@ -1,7 +1,5 @@
 import 'package:food_waste_app/data/models/auth_response.dart';
 
-/// Uygulama genelinde oturum bilgisini tutan basit singleton.
-/// Provider/Bloc eklenene kadar static state kullanır.
 class AppState {
   AppState._();
 
@@ -27,3 +25,5 @@ class AppState {
     _currentUser = null;
   }
 }
+
+
