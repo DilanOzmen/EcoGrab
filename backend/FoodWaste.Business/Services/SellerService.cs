@@ -24,7 +24,13 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
                 x.DiscountedPrice,
                 x.Stock,
                 x.ExpiryDate,
-                x.IsActive))
+                x.IsActive,
+                x.Images
+                    .Where(i => !i.IsDeleted)
+                    .OrderByDescending(i => i.IsPrimary)
+                    .ThenBy(i => i.Id)
+                    .Select(i => i.ImageUrl)
+                    .FirstOrDefault()))
             .ToListAsync(cancellationToken);
     }
 
@@ -65,7 +71,8 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
             product.DiscountedPrice,
             product.Stock,
             product.ExpiryDate,
-            product.IsActive);
+            product.IsActive,
+            null);
     }
 
     public async Task<SellerProductDto?> UpdateProductAsync(int sellerUserId, int productId, SellerProductUpdateModel model, CancellationToken cancellationToken = default)
@@ -117,7 +124,13 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
             product.DiscountedPrice,
             product.Stock,
             product.ExpiryDate,
-            product.IsActive);
+            product.IsActive,
+            await dbContext.ProductImages
+                .Where(x => x.ProductId == product.Id && !x.IsDeleted)
+                .OrderByDescending(x => x.IsPrimary)
+                .ThenBy(x => x.Id)
+                .Select(x => x.ImageUrl)
+                .FirstOrDefaultAsync(cancellationToken));
     }
 
     public async Task<bool> DeleteProductAsync(int sellerUserId, int productId, CancellationToken cancellationToken = default)

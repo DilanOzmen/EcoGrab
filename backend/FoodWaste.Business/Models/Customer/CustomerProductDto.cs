@@ -11,4 +11,5 @@ public sealed record CustomerProductDto(
     decimal DiscountedPrice,
     decimal DiscountPercent,
     int Stock,
-    DateTime ExpiryDate);
+    DateTime ExpiryDate,
+    string? PrimaryImageUrl);

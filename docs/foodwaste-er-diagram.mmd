@@ -1,0 +1,111 @@
+erDiagram
+    USER {
+        int Id PK
+        string FullName
+        string Email UK
+        string Phone
+        string Role
+        bool IsActive
+        bool IsApproved
+        bool IsDeleted
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+
+    RESTAURANT {
+        int Id PK
+        int OwnerUserId FK
+        string Name
+        string Address
+        string City
+        string Phone
+        float Latitude
+        float Longitude
+        bool IsDeleted
+    }
+
+    PRODUCT {
+        int Id PK
+        int RestaurantId FK
+        string Category
+        string Name
+        decimal OriginalPrice
+        decimal DiscountedPrice
+        int Stock
+        datetime ExpiryDate
+        bool IsActive
+        bool IsDeleted
+        rowversion RowVersion
+    }
+
+    PRODUCT_IMAGE {
+        int Id PK
+        int ProductId FK
+        string ImageUrl
+        string StorageKey
+        bool IsPrimary
+        bool IsDeleted
+    }
+
+    ORDER {
+        int Id PK
+        int UserId FK
+        string Status
+        decimal TotalAmount
+        datetime ReservedUntil
+        datetime ConfirmedAt
+        datetime CompletedAt
+        datetime CancelledAt
+        bool IsDeleted
+        rowversion RowVersion
+    }
+
+    ORDER_ITEM {
+        int Id PK
+        int OrderId FK
+        int ProductId FK
+        int Quantity
+        decimal UnitPrice
+        bool IsDeleted
+    }
+
+    REFRESH_TOKEN {
+        int Id PK
+        int UserId FK
+        string TokenHash UK
+        datetime ExpiresAt
+        datetime RevokedAt
+        bool IsDeleted
+    }
+
+    ADMIN_ACTION_LOG {
+        int Id PK
+        int AdminUserId FK
+        string ActionType
+        string TargetType
+        int TargetId
+        string Reason
+        bool IsDeleted
+    }
+
+    NOTIFICATION {
+        int Id PK
+        int UserId FK
+        string Type
+        string Title
+        string Message
+        bool IsRead
+        bool IsDeleted
+    }
+
+    USER ||--o{ ORDER : places
+    USER ||--o{ REFRESH_TOKEN : owns
+    USER ||--o{ NOTIFICATION : receives
+    USER ||--o{ ADMIN_ACTION_LOG : performs
+    USER ||--o{ RESTAURANT : owns
+
+    RESTAURANT ||--o{ PRODUCT : lists
+    PRODUCT ||--o{ PRODUCT_IMAGE : has
+
+    ORDER ||--|{ ORDER_ITEM : contains
+    PRODUCT ||--o{ ORDER_ITEM : referenced_by

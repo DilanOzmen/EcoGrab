@@ -11,4 +11,5 @@ public sealed record SellerProductDto(
     decimal DiscountedPrice,
     int Stock,
     DateTime ExpiryDate,
-    bool IsActive);
+    bool IsActive,
+    string? PrimaryImageUrl);

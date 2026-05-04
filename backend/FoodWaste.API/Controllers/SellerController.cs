@@ -254,11 +254,13 @@ public class SellerController(ISellerService sellerService) : ControllerBase
     }
 
     [HttpPost("upload-image")]
-    [AllowAnonymous] // Test aşamasında yetki (token) sorunu yaşamamak için ekledik
     public async Task<IActionResult> UploadProductImage(IFormFile file)
     {
         if (file == null || file.Length == 0)
             return BadRequest(new { message = "Dosya secilmedi." });
+
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Sadece resim dosyalari yuklenebilir." });
 
         // 1. Resimlerin kaydedileceği klasör yolu
         var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
@@ -277,8 +279,13 @@ public class SellerController(ISellerService sellerService) : ControllerBase
             await file.CopyToAsync(stream);
         }
 
-        // 5. Flutter'a resmin yolunu dön
-        // Örn: /uploads/abc-123.jpg
-        return Ok(new { imageUrl = $"/uploads/{fileName}" });
+        var relativePath = $"/uploads/{fileName}";
+        var absoluteUrl = $"{Request.Scheme}://{Request.Host}{relativePath}";
+
+        return Ok(new
+        {
+            imageUrl = absoluteUrl,
+            storageKey = fileName
+        });
     }
 }

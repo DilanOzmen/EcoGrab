@@ -62,6 +62,7 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
                         && x.DiscountedPrice < x.OriginalPrice
                         && x.Restaurant != null && !x.Restaurant.IsDeleted)
             .Include(x => x.Restaurant)
+            .Include(x => x.Images)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
@@ -122,7 +123,13 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
                     x.DiscountedPrice,
                     discountPercent,
                     x.Stock,
-                    x.ExpiryDate);
+                    x.ExpiryDate,
+                    x.Images
+                        .Where(i => !i.IsDeleted)
+                        .OrderByDescending(i => i.IsPrimary)
+                        .ThenBy(i => i.Id)
+                        .Select(i => i.ImageUrl)
+                        .FirstOrDefault());
             });
 
         if (filter.MinDiscountPercent.HasValue)
@@ -168,7 +175,13 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
                 x.DiscountedPrice,
                 x.OriginalPrice <= 0 ? 0 : Math.Round((x.OriginalPrice - x.DiscountedPrice) * 100 / x.OriginalPrice, 2),
                 x.Stock,
-                x.ExpiryDate))
+                x.ExpiryDate,
+                x.Images
+                    .Where(i => !i.IsDeleted)
+                    .OrderByDescending(i => i.IsPrimary)
+                    .ThenBy(i => i.Id)
+                    .Select(i => i.ImageUrl)
+                    .FirstOrDefault()))
             .ToListAsync(cancellationToken);
     }
 
@@ -198,7 +211,13 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
                 x.DiscountedPrice,
                 x.OriginalPrice <= 0 ? 0 : Math.Round((x.OriginalPrice - x.DiscountedPrice) * 100 / x.OriginalPrice, 2),
                 x.Stock,
-                x.ExpiryDate))
+                x.ExpiryDate,
+                x.Images
+                    .Where(i => !i.IsDeleted)
+                    .OrderByDescending(i => i.IsPrimary)
+                    .ThenBy(i => i.Id)
+                    .Select(i => i.ImageUrl)
+                    .FirstOrDefault()))
             .FirstOrDefaultAsync(cancellationToken);
 
         return product;

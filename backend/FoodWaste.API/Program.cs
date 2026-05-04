@@ -130,6 +130,8 @@ builder.Services.AddHostedService<ReservationExpiryHostedService>();
 
 var app = builder.Build();
 
+app.UseStaticFiles();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
