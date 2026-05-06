@@ -85,6 +85,9 @@ class ApiClient {
     String? category,
     String? homeCategory,
     double? minDiscountPercent,
+    double? latitude,
+    double? longitude,
+    double? radiusKm,
   }) async {
     final uri = Uri.parse('$baseUrl/api/customer/products').replace(
       queryParameters: {
@@ -93,6 +96,9 @@ class ApiClient {
         if (homeCategory != null) 'homeCategory': homeCategory,
         if (minDiscountPercent != null)
           'minDiscountPercent': minDiscountPercent.toString(),
+        if (latitude != null) 'latitude': latitude.toString(),
+        if (longitude != null) 'longitude': longitude.toString(),
+        if (radiusKm != null) 'radiusKm': radiusKm.toString(),
       },
     );
 
@@ -222,7 +228,6 @@ class ApiClient {
 
   // -- Seller Products
 
-  /// Yeni eklenen metod: Satıcının dükkan görselini yükler
   Future<String> uploadProductImage(Uint8List bytes, String fileName) async {
     var request = http.MultipartRequest(
       'POST',
@@ -235,7 +240,6 @@ class ApiClient {
       filename: fileName,
     ));
 
-    // Token varsa header ekleyelim (kodunda AllowAnonymous yapmıştık ama güvenlik iyidir)
     final token = AppState.currentUser?.token ?? '';
     if (token.isNotEmpty) {
       request.headers['Authorization'] = 'Bearer $token';
@@ -246,7 +250,7 @@ class ApiClient {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['imageUrl']; // Backend'den gelen yol: /uploads/xxx.jpg
+      return data['imageUrl'];
     } else {
       throw ApiException(
         _extractErrorMessage(response.body, 'Gorsel yukleme basarisiz.'),
@@ -572,6 +576,3 @@ class ApiException implements Exception {
   @override
   String toString() => message;
 }
-
-
-
