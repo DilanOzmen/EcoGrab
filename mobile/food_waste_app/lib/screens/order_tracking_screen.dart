@@ -32,30 +32,53 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   @override
   void initState() {
     super.initState();
+    _reloadOrder();
+  }
+
+  void _reloadOrder() {
     _orderFuture = widget.apiClient.getOrderDetail(widget.orderId);
   }
 
   List<TrackingStep> _buildSteps(String status) {
-    final statuses = ['Pending', 'Confirmed', 'ReadyForPickup', 'Completed'];
-    final currentIndex = statuses.indexOf(status);
+    final normalized = status.toLowerCase();
+
+    if (normalized == 'cancelled') {
+      return [
+        TrackingStep(
+          title: 'Sipariş İptal Edildi',
+          description: 'Bu sipariş artık aktif değildir.',
+          isCompleted: true,
+          isCurrent: true,
+        ),
+      ];
+    }
+
+    final statuses = [
+      'pending',
+      'confirmed',
+      'readyforpickup',
+      'completed',
+    ];
+
+    final currentIndex = statuses.indexOf(normalized);
 
     return [
       TrackingStep(
         title: 'Sipariş Alındı',
         description: 'Talebiniz restorana ulaştı.',
-        isCompleted: currentIndex > 0,
+        isCompleted: currentIndex >= 0,
         isCurrent: currentIndex == 0,
       ),
       TrackingStep(
         title: 'Onaylandı',
         description: 'Restoran hazırlığa başladı.',
-        isCompleted: currentIndex > 1,
+        isCompleted: currentIndex >= 1,
         isCurrent: currentIndex == 1,
       ),
       TrackingStep(
         title: 'Teslime Hazır',
         description: 'Paketiniz sizi bekliyor.',
-        isCompleted: currentIndex > 2,
+        isCompleted: currentIndex >= 2,
         isCurrent: currentIndex == 2,
       ),
       TrackingStep(
@@ -72,15 +95,30 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     return normalized == 'pending' || normalized == 'confirmed';
   }
 
+  String _itemStatusText(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'Bekliyor';
+      case 'confirmed':
+        return 'Hazırlanıyor';
+      case 'readyforpickup':
+        return 'Teslime hazır';
+      case 'completed':
+        return 'Tamamlandı';
+      case 'cancelled':
+        return 'İptal edildi';
+      default:
+        return status;
+    }
+  }
+
   Future<void> _cancelOrder() async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Text('Siparişi İptal Et'),
-        content: const Text(
-          'Bu taptaze ürünlerin israf olmasını istemeyiz. Yine de iptal etmek istiyor musunuz?',
-        ),
+        content: const Text('Siparişi iptal etmek istediğinize emin misiniz?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -109,11 +147,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sipariş başarıyla iptal edildi.')),
-      );
+      setState(() {
+        _reloadOrder();
+      });
 
-      Navigator.pop(context, true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sipariş iptal edildi.')),
+      );
     } catch (e) {
       if (!mounted) return;
 
@@ -174,7 +214,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Text(
-                  snapshot.error.toString(),
+                  snapshot.error.toString().replaceAll('ApiException: ', ''),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -185,34 +225,44 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           final steps = _buildSteps(order.status);
           final canCancel = _canCancel(order.status);
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _hero(order),
-                const SizedBox(height: 20),
-                _summaryCard(order),
-                const SizedBox(height: 22),
-                Text(
-                  'Teslimat Süreci',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: _cardDecoration(),
-                  child: TrackingTimeline(steps: steps),
-                ),
-                if (canCancel) ...[
+          return RefreshIndicator(
+            color: AppColors.primaryGreen,
+            onRefresh: () async {
+              setState(() {
+                _reloadOrder();
+              });
+              await _orderFuture;
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _hero(order),
+                  const SizedBox(height: 20),
+                  _summaryCard(order),
                   const SizedBox(height: 22),
-                  _cancelButton(),
+                  Text(
+                    'Teslimat Süreci',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: _cardDecoration(),
+                    child: TrackingTimeline(steps: steps),
+                  ),
+                  if (canCancel) ...[
+                    const SizedBox(height: 22),
+                    _cancelButton(),
+                  ],
                 ],
-              ],
+              ),
             ),
           );
         },
@@ -307,11 +357,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     ),
                   ),
                   Text(
-                    'Hazırlanıyor',
+                    _itemStatusText(order.status),
                     style: GoogleFonts.manrope(
-                      color: AppColors.textSoft,
+                      color: order.status.toLowerCase() == 'cancelled'
+                          ? AppColors.error
+                          : AppColors.textSoft,
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],

@@ -169,6 +169,10 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
     {
         var query = dbContext.Orders
             .AsNoTracking()
+            .Include(x => x.User)
+            .Include(x => x.Items)
+                .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p!.Restaurant)
             .Where(x => !x.IsDeleted
                         && x.Items.Any(i => i.Product != null
                                             && !i.Product.IsDeleted
@@ -178,7 +182,9 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
 
         if (onlyActive)
         {
-            query = query.Where(x => x.Status == OrderStatus.Pending || x.Status == OrderStatus.Confirmed);
+            query = query.Where(x => x.Status == OrderStatus.Pending 
+                                    || x.Status == OrderStatus.Confirmed
+                                    || x.Status == OrderStatus.ReadyForPickup);
         }
 
         return await query
@@ -260,6 +266,10 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
     {
         return await dbContext.Orders
             .AsNoTracking()
+            .Include(x => x.User)
+            .Include(x => x.Items)
+                .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p!.Restaurant)
             .Where(x => x.Id == orderId
                         && !x.IsDeleted
                         && x.Items.Any(i => i.Product != null
@@ -319,8 +329,14 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
     {
         return await dbContext.Orders
             .AsNoTracking()
+            .Include(x => x.User)
+            .Include(x => x.Items)
+                .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p!.Restaurant)
             .Where(x => !x.IsDeleted
-                        && (x.Status == OrderStatus.Pending || x.Status == OrderStatus.Confirmed)
+                        && (x.Status == OrderStatus.Pending 
+                            || x.Status == OrderStatus.Confirmed
+                            || x.Status == OrderStatus.ReadyForPickup)
                         && x.Items.Any(i => i.Product != null
                                             && !i.Product.IsDeleted
                                             && i.Product.Restaurant != null
@@ -356,7 +372,7 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
             return false;
         }
 
-        if (newStatus != OrderStatus.Confirmed && newStatus != OrderStatus.Completed)
+        if (newStatus != OrderStatus.Confirmed && newStatus != OrderStatus.Completed && newStatus != OrderStatus.Cancelled && newStatus != OrderStatus.ReadyForPickup)
         {
             return false;
         }
@@ -389,6 +405,10 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
         else if (newStatus == OrderStatus.Completed)
         {
             order.CompletedAt = DateTime.UtcNow;
+        }
+        else if (newStatus == OrderStatus.Cancelled)
+        {
+            order.CancelledAt = DateTime.UtcNow;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
