@@ -29,7 +29,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
 
   bool _isLoading = false;
 
-  static const String _baseUrl = 'http://10.0.2.2:5000';
+  static const String _baseUrl = 'http://10.0.2.2:5141';
   static const String _chatEndpoint = '$_baseUrl/api/Chat/ask';
 
   Future<void> _sendMessage() async {
