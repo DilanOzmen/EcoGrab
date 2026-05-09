@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:food_waste_app/screens/chatbot_screen.dart';
 import 'package:food_waste_app/core/app_colors.dart';
 import 'package:food_waste_app/core/app_state.dart';
 import 'package:food_waste_app/data/models/customer_order.dart';
