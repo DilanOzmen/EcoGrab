@@ -119,12 +119,18 @@ class ApiClient {
     String? search,
     String? city,
     String? homeCategory,
+    double? latitude,  // Eklendi
+    double? longitude, // Eklendi
+    double? radiusKm,  // Eklendi
   }) async {
     final uri = Uri.parse('$baseUrl/api/customer/restaurants').replace(
       queryParameters: {
         if (search != null) 'search': search,
         if (city != null) 'city': city,
         if (homeCategory != null) 'homeCategory': homeCategory,
+        if (latitude != null) 'latitude': latitude.toString(),
+        if (longitude != null) 'longitude': longitude.toString(),
+        if (radiusKm != null) 'radiusKm': radiusKm.toString(),
       },
     );
 

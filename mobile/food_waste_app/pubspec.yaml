@@ -30,18 +30,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_map: ^6.1.0
-  latlong2: ^0.9.1
+  google_maps_flutter: ^2.10.0  # flutter_map yerine bunu kullanacağız
+  geolocator: ^13.0.2           # GPS verisi için
+  geocoding: ^3.0.0            # Koordinatı adrese çevirmek için
   
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  # Mevcut diğer paketlerin kalsın:
   cupertino_icons: ^1.0.8
   http: ^1.2.2
   google_fonts: ^6.2.1
   url_launcher: ^6.3.1
   image_picker: ^1.2.1
 
+
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

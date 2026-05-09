@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:food_waste_app/data/models/restaurant.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
+import 'package:food_waste_app/core/app_state.dart';
 import 'restaurant_detail_screen.dart';
 
 class MapViewScreen extends StatefulWidget {
@@ -14,12 +14,18 @@ class MapViewScreen extends StatefulWidget {
 
 class _MapViewScreenState extends State<MapViewScreen> {
   final ApiClient _apiClient = ApiClient();
-  final MapController _mapController = MapController();
+  GoogleMapController? _mapController;
   final TextEditingController _searchController = TextEditingController();
-  
+
   List<Restaurant> _restaurants = [];
   bool _loading = false;
   int _selectedIndex = 0;
+
+  // Başlangıç konumu: Cihaz konumu varsa orası, yoksa Pendik/İstanbul merkezi
+  final LatLng _initialPosition = LatLng(
+    AppState.latitude ?? 40.8922,
+    AppState.longitude ?? 29.2321,
+  );
 
   @override
   void initState() {
@@ -36,14 +42,20 @@ class _MapViewScreenState extends State<MapViewScreen> {
   Future<void> _fetchRestaurants({String? search}) async {
     setState(() => _loading = true);
     try {
-      final results = await _apiClient.getRestaurants(search: search);
+      // Koordinat bazlı restoranları çekiyoruz
+      final results = await _apiClient.getRestaurants(
+        search: search,
+        latitude: AppState.latitude,
+        longitude: AppState.longitude,
+        radiusKm: 10,
+      );
       if (mounted) {
         setState(() {
           _restaurants = results;
         });
       }
     } catch (_) {
-      // Hata durumunda liste boş kalmasın diye mevcut liste korunabilir
+      // Hata durumunda sessizce devam et
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -55,7 +67,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
 
   void _moveToRestaurant(Restaurant res, int index) {
     setState(() => _selectedIndex = index);
-    _mapController.move(LatLng(res.latitude, res.longitude), 15.0);
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(LatLng(res.latitude, res.longitude), 15.0),
+    );
   }
 
   void _openRestaurantDetail(Restaurant restaurant) async {
@@ -84,42 +98,27 @@ class _MapViewScreenState extends State<MapViewScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // --- GERÇEK HARİTA KATMANI (OpenStreetMap) ---
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              // Senin veritabanındaki restoranların olduğu Pendik merkezli koordinatlar
-              initialCenter: const LatLng(40.8922, 29.2321), 
-              initialZoom: 13.0,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all,
-              ),
+          // --- GOOGLE MAPS KATMANI ---
+          GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: _initialPosition,
+              zoom: 13.0,
             ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.foodwaste.app',
-              ),
-              // --- DİNAMİK MARKERLAR ---
-              MarkerLayer(
-                markers: _restaurants.asMap().entries.map((entry) {
-                  int idx = entry.key;
-                  Restaurant res = entry.value;
-                  return Marker(
-                    point: LatLng(res.latitude, res.longitude),
-                    width: 60,
-                    height: 80,
-                    child: GestureDetector(
-                      onTap: () => _moveToRestaurant(res, idx),
-                      child: _buildMapMarker(
-                        isSelected: _selectedIndex == idx,
-                        label: idx == 0 ? "%60 İNDİRİM" : "", 
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
+            onMapCreated: (controller) => _mapController = controller,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false, // Kendi tasarımımız için kapalı
+            zoomControlsEnabled: false,
+            markers: _restaurants.asMap().entries.map((entry) {
+              int idx = entry.key;
+              Restaurant res = entry.value;
+              return Marker(
+                markerId: MarkerId('res_${res.id}'),
+                position: LatLng(res.latitude, res.longitude),
+                onTap: () => _moveToRestaurant(res, idx),
+                // Not: Google Maps marker iconu özelleştirmek için BitmapDescriptor gerekir.
+                // Şimdilik standart marker kullanıyoruz.
+              );
+            }).toSet(),
           ),
 
           // --- ÜST ARAMA ÇUBUĞU ---
@@ -178,7 +177,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
     if (_restaurants.isEmpty) {
       return _buildModernBox(
         padding: const EdgeInsets.all(16),
-        child: const Center(child: Text('Yükleniyor veya dükkan bulunamadı...')),
+        child: const Center(child: Text('Dükkan bulunamadı...')),
       );
     }
 
@@ -267,7 +266,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(20),
+            // YENİ: withValues kullanımı (Flutter 3.27+ uyumlu)
+            color: Colors.black.withValues(alpha: 0.1), 
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
@@ -276,36 +276,4 @@ class _MapViewScreenState extends State<MapViewScreen> {
       child: child,
     );
   }
-
-  Widget _buildMapMarker({required bool isSelected, required String label}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF9D4300) : const Color(0xFF1B4332),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3),
-            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
-          ),
-          child: const Icon(Icons.storefront, size: 20, color: Colors.white),
-        ),
-        if (label.isNotEmpty)
-          Container(
-            margin: const EdgeInsets.only(top: 5),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF9D4300),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-            ),
-          ),
-      ],
-    );
-  }
 }
-
