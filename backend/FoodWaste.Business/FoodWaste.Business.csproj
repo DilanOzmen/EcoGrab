@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Mscc.GenerativeAI" Version="3.1.0" />
     <ProjectReference Include="..\FoodWaste.Data\FoodWaste.Data.csproj" />
     <ProjectReference Include="..\FoodWaste.Entities\FoodWaste.Entities.csproj" />
   </ItemGroup>

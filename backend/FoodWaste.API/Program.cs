@@ -3,6 +3,8 @@ using FoodWaste.API.Middleware;
 using FoodWaste.API.Options;
 using FoodWaste.API.Services;
 using FoodWaste.Business;
+using FoodWaste.Business.Abstractions; // Burayı ekledim
+using FoodWaste.Business.Services;    // Burayı ekledim
 using FoodWaste.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -16,7 +18,7 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "FoodWaste API",
+        Title = "EcoGrab API", // Yeni markamızla güncelledim :)
         Version = "v1"
     });
 
@@ -44,6 +46,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFlutterWeb", policy =>
@@ -75,22 +78,7 @@ builder.Services.AddCors(options =>
                        || host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
                        || host.StartsWith("192.168.", StringComparison.OrdinalIgnoreCase)
                        || host.StartsWith("10.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.16.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.17.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.18.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.19.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.20.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.21.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.22.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.23.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.24.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.25.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.26.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.27.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.28.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.29.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.30.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.31.", StringComparison.OrdinalIgnoreCase);
+                       || host.StartsWith("172.16.", StringComparison.OrdinalIgnoreCase);
             })
             .AllowAnyMethod()
             .AllowAnyHeader()
@@ -101,6 +89,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddDataAccess(builder.Configuration);
 builder.Services.AddBusiness();
+
+// Chatbot Servisimizi buraya ekledim
+builder.Services.AddScoped<IChatService, ChatService>();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -138,7 +129,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "FoodWaste API v1");
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "EcoGrab API v1");
         options.RoutePrefix = "swagger";
     });
 }
@@ -150,12 +141,12 @@ else
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseCors("AllowDevelopment");
 app.UseAuthentication();
-app.UseStaticFiles(); // Bu satır wwwroot içindeki dosyalara erişimi açar
+app.UseStaticFiles(); 
 app.UseAuthorization();
 
 app.MapGet("/", () => Results.Ok(new
 {
-    name = "FoodWaste API",
+    name = "EcoGrab API",
     status = "running",
     docs = "/swagger"
 }));
