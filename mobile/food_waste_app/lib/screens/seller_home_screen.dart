@@ -9,6 +9,7 @@ import 'package:food_waste_app/data/models/seller_product.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
 import 'package:food_waste_app/screens/list_new_product_screen.dart';
 import 'package:food_waste_app/screens/login_screen.dart';
+import 'package:food_waste_app/screens/seller_order_approval_screen.dart';
 
 class SellerHomeScreen extends StatefulWidget {
   const SellerHomeScreen({super.key});
@@ -71,6 +72,15 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
     }
   }
 
+  void _openOrderApprovalScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SellerOrderApprovalScreen(),
+      ),
+    );
+  }
+
   void _logout() {
     AppState.clear();
 
@@ -89,7 +99,8 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
         child: FutureBuilder<List<SellerProduct>>(
           future: _productsFuture,
           builder: (context, snapshot) {
-            final isLoading = snapshot.connectionState == ConnectionState.waiting;
+            final isLoading =
+                snapshot.connectionState == ConnectionState.waiting;
             final products = snapshot.data ?? [];
 
             return RefreshIndicator(
@@ -114,7 +125,6 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
                           const SizedBox(height: 24),
                           _buildSectionHeader(products.length),
                           const SizedBox(height: 14),
-
                           if (isLoading)
                             const Padding(
                               padding: EdgeInsets.only(top: 80),
@@ -247,7 +257,11 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
                 children: [
                   _miniStat(Icons.inventory_2_outlined, 'Stok', '$totalStock'),
                   const SizedBox(width: 10),
-                  _miniStat(Icons.storefront_outlined, 'Liste', '$totalProducts'),
+                  _miniStat(
+                    Icons.storefront_outlined,
+                    'Liste',
+                    '$totalProducts',
+                  ),
                 ],
               ),
             ],
@@ -312,10 +326,10 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
         const SizedBox(width: 12),
         Expanded(
           child: _actionCard(
-            icon: Icons.refresh_rounded,
-            title: 'Yenile',
-            subtitle: 'Ürünleri çek',
-            onTap: _refreshProducts,
+            icon: Icons.fact_check_outlined,
+            title: 'Siparişleri Onayla',
+            subtitle: 'Bekleyenleri kontrol et',
+            onTap: _openOrderApprovalScreen,
             isPrimary: false,
           ),
         ),
@@ -358,28 +372,34 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
               color: isPrimary ? Colors.white : AppColors.primaryGreen,
             ),
             const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.plusJakartaSans(
-                    color: isPrimary ? Colors.white : AppColors.textDark,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: isPrimary ? Colors.white : AppColors.textDark,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                    ),
                   ),
-                ),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.manrope(
-                    color: isPrimary
-                        ? Colors.white.withValues(alpha: 0.74)
-                        : AppColors.textSoft,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.manrope(
+                      color: isPrimary
+                          ? Colors.white.withValues(alpha: 0.74)
+                          : AppColors.textSoft,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -465,35 +485,21 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
                   ),
                 ),
                 const SizedBox(height: 6),
-                Row(
-                  children: [
-                    _smallBadge(
-                      Icons.inventory_2_outlined,
-                      'Stok: ${product.stock}',
-                    ),
-                  ],
+                _smallBadge(
+                  Icons.inventory_2_outlined,
+                  'Stok: ${product.stock}',
                 ),
               ],
             ),
           ),
           const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '₺${product.discountedPrice}',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryGreen,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.textSoft.withValues(alpha: 0.7),
-              ),
-            ],
+          Text(
+            '₺${product.discountedPrice}',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: AppColors.primaryGreen,
+            ),
           ),
         ],
       ),
@@ -508,6 +514,7 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 13, color: AppColors.primaryGreen),
           const SizedBox(width: 5),
