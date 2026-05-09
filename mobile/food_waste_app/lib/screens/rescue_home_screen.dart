@@ -7,6 +7,7 @@ import 'package:food_waste_app/data/models/customer_order.dart';
 import 'package:food_waste_app/data/models/product.dart';
 import 'package:food_waste_app/data/models/restaurant.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
+import 'package:food_waste_app/data/services/location_service.dart';
 
 import 'login_screen.dart';
 import 'map_view_screen.dart';
@@ -62,9 +63,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     _slide = Tween<Offset>(
       begin: const Offset(0, 0.05),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
   }
@@ -78,21 +77,28 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
   Future<_HomeData> _loadHomeData([_HomeCategoryFilter? filter]) async {
     final selectedFilter = filter ?? _selectedHomeFilter;
 
-    final String? categoryFilter =
-        selectedFilter == _HomeCategoryFilter.all ? null : selectedFilter.apiValue;
+    final String? categoryFilter = selectedFilter == _HomeCategoryFilter.all
+        ? null
+        : selectedFilter.apiValue;
 
+    // YENİ: API'ye konum verilerini gönderiyoruz
     final results = await Future.wait([
-      _apiClient.getProducts(category: categoryFilter),
-      _apiClient.getRestaurants(),
+      _apiClient.getProducts(
+        category: categoryFilter,
+        latitude: AppState.latitude,
+        longitude: AppState.longitude,
+      ),
+      _apiClient.getRestaurants(
+        latitude: AppState.latitude,
+        longitude: AppState.longitude,
+        radiusKm: 10, // 10km çapındaki restoranlar
+      ),
     ]);
 
     final products = results[0] as List<Product>;
     final restaurants = results[1] as List<Restaurant>;
 
-    return _HomeData(
-      products: products,
-      restaurants: restaurants,
-    );
+    return _HomeData(products: products, restaurants: restaurants);
   }
 
   Future<List<CustomerOrder>> _loadOrdersData() async {
@@ -147,10 +153,8 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => RestaurantDetailScreen(
-            restaurant: detail,
-            apiClient: _apiClient,
-          ),
+          builder: (_) =>
+              RestaurantDetailScreen(restaurant: detail, apiClient: _apiClient),
         ),
       );
     } catch (e) {
@@ -166,10 +170,8 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     final changed = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => ProductDetailScreen(
-          product: product,
-          apiClient: _apiClient,
-        ),
+        builder: (_) =>
+            ProductDetailScreen(product: product, apiClient: _apiClient),
       ),
     );
 
@@ -211,6 +213,49 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     }
   }
 
+  // YENİ: Konum Barı Tasarımı
+  Widget _buildLocationBar() {
+    final address = AppState.currentAddress ?? "Konum alınıyor...";
+    return GestureDetector(
+      onTap: () async {
+        await LocationService.fetchAndSaveLocation();
+        _refreshHome();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primaryGreen.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.location_on_rounded,
+              color: AppColors.primaryGreen,
+              size: 16,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              address,
+              style: GoogleFonts.manrope(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.primaryGreen,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHomeTab() {
     return SafeArea(
       child: FutureBuilder<_HomeData>(
@@ -225,7 +270,10 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
           if (snapshot.hasError) {
             return _buildErrorState(
               title: 'Veriler yüklenemedi',
-              message: snapshot.error.toString().replaceAll('ApiException: ', ''),
+              message: snapshot.error.toString().replaceAll(
+                'ApiException: ',
+                '',
+              ),
             );
           }
 
@@ -254,8 +302,10 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildTopHeader(),
+                        const SizedBox(height: 12),
+                        _buildLocationBar(), // BU SATIRI EKLE (Hata bu yüzden yanıyor)
                         const SizedBox(height: 18),
-                        _buildHeroCard(data),
+                        _buildHeroCard(data!),
                         const SizedBox(height: 22),
                         _buildCategories(),
                         const SizedBox(height: 22),
@@ -300,7 +350,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
                         else
                           ...data.products
                               .take(8)
-                              .map((product) => _buildSimpleProductCard(product)),
+                              .map(
+                                (product) => _buildSimpleProductCard(product),
+                              ),
                       ],
                     ),
                   ),
@@ -780,7 +832,10 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
           if (snapshot.hasError) {
             return _buildErrorState(
               title: 'Siparişler yüklenemedi',
-              message: snapshot.error.toString().replaceAll('ApiException: ', ''),
+              message: snapshot.error.toString().replaceAll(
+                'ApiException: ',
+                '',
+              ),
             );
           }
 
@@ -798,7 +853,8 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
                   _buildEmptyState(
                     icon: Icons.receipt_long_outlined,
                     title: 'Henüz sipariş yok',
-                    message: 'Rezervasyonların ve siparişlerin burada görünecek.',
+                    message:
+                        'Rezervasyonların ve siparişlerin burada görünecek.',
                   ),
                 ],
               ),
@@ -833,10 +889,8 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
           final changed = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (_) => OrderTrackingScreen(
-                orderId: order.id,
-                apiClient: _apiClient,
-              ),
+              builder: (_) =>
+                  OrderTrackingScreen(orderId: order.id, apiClient: _apiClient),
             ),
           );
 
@@ -1058,10 +1112,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     );
   }
 
-  Widget _buildErrorState({
-    required String title,
-    required String message,
-  }) {
+  Widget _buildErrorState({required String title, required String message}) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -1112,8 +1163,9 @@ class CategoryChip extends StatelessWidget {
             color: isSelected ? AppColors.primaryGreen : AppColors.surface,
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color:
-                  isSelected ? AppColors.primaryGreen : AppColors.surfaceContainer,
+              color: isSelected
+                  ? AppColors.primaryGreen
+                  : AppColors.surfaceContainer,
             ),
           ),
           child: Column(
@@ -1145,10 +1197,7 @@ class _HomeData {
   final List<Product> products;
   final List<Restaurant> restaurants;
 
-  const _HomeData({
-    required this.products,
-    required this.restaurants,
-  });
+  const _HomeData({required this.products, required this.restaurants});
 }
 
 class _StatusInfo {
@@ -1158,31 +1207,24 @@ class _StatusInfo {
   const _StatusInfo(this.text, this.color);
 }
 
-enum _HomeCategoryFilter {
-  all,
-  vegetables,
-  bakery,
-  dairy,
-  fruit,
-  meal,
-}
+enum _HomeCategoryFilter { all, vegetables, bakery, dairy, fruit, meal }
 
 extension on _HomeCategoryFilter {
   String get label => switch (this) {
-        _HomeCategoryFilter.all => 'Tüm',
-        _HomeCategoryFilter.vegetables => 'Sebze',
-        _HomeCategoryFilter.bakery => 'Fırın',
-        _HomeCategoryFilter.dairy => 'Süt',
-        _HomeCategoryFilter.fruit => 'Meyve',
-        _HomeCategoryFilter.meal => 'Yemek',
-      };
+    _HomeCategoryFilter.all => 'Tüm',
+    _HomeCategoryFilter.vegetables => 'Sebze',
+    _HomeCategoryFilter.bakery => 'Fırın',
+    _HomeCategoryFilter.dairy => 'Süt',
+    _HomeCategoryFilter.fruit => 'Meyve',
+    _HomeCategoryFilter.meal => 'Yemek',
+  };
 
   String get apiValue => switch (this) {
-        _HomeCategoryFilter.all => '',
-        _HomeCategoryFilter.vegetables => 'Vegetables',
-        _HomeCategoryFilter.bakery => 'Bakery',
-        _HomeCategoryFilter.dairy => 'Dairy',
-        _HomeCategoryFilter.fruit => 'Fruit',
-        _HomeCategoryFilter.meal => 'Meal',
-      };
+    _HomeCategoryFilter.all => '',
+    _HomeCategoryFilter.vegetables => 'Vegetables',
+    _HomeCategoryFilter.bakery => 'Bakery',
+    _HomeCategoryFilter.dairy => 'Dairy',
+    _HomeCategoryFilter.fruit => 'Fruit',
+    _HomeCategoryFilter.meal => 'Meal',
+  };
 }
