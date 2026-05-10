@@ -305,7 +305,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
                         const SizedBox(height: 12),
                         _buildLocationBar(), // BU SATIRI EKLE (Hata bu yüzden yanıyor)
                         const SizedBox(height: 18),
-                        _buildHeroCard(data!),
+                        _buildHeroCard(data),
                         const SizedBox(height: 22),
                         _buildCategories(),
                         const SizedBox(height: 22),
