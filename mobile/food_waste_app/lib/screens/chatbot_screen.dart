@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:food_waste_app/core/app_assets.dart';
 import 'package:food_waste_app/core/app_colors.dart';
 import 'package:food_waste_app/core/app_spacing.dart';
+import 'package:food_waste_app/core/app_state.dart';
 import 'package:food_waste_app/core/app_text_styles.dart';
 
 class ChatBotScreen extends StatefulWidget {
@@ -15,22 +16,46 @@ class ChatBotScreen extends StatefulWidget {
   State<ChatBotScreen> createState() => _ChatBotScreenState();
 }
 
-class _ChatBotScreenState extends State<ChatBotScreen> {
+class _ChatBotScreenState extends State<ChatBotScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  final List<_ChatMessage> _messages = [
-    _ChatMessage(
-      text:
-          'Merhaba! Ben EcoGrab asistanıyım. Yemek ürünleri, restoranlar ve siparişlerle ilgili sana yardımcı olabilirim.',
-      isUser: false,
-    ),
-  ];
+  late final AnimationController _animationController;
+  late final Animation<double> _robotFloat;
 
   bool _isLoading = false;
 
   static const String _baseUrl = 'http://10.0.2.2:5141';
   static const String _chatEndpoint = '$_baseUrl/api/Chat/ask';
+
+  final List<_ChatMessage> _messages = [
+    _ChatMessage(
+      text:
+          'Merhaba! Ben EcoGrab asistanıyım. Yakındaki ürünler, restoranlar ve siparişlerin hakkında yardımcı olabilirim.',
+      isUser: false,
+    ),
+  ];
+
+ @override
+void initState() {
+  super.initState();
+
+  _animationController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..repeat(reverse: true);
+
+  _robotFloat = Tween<double>(
+    begin: -4,
+    end: 4,
+  ).animate(
+    CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ),
+  );
+}
 
   Future<void> _sendMessage() async {
     final message = _messageController.text.trim();
@@ -49,23 +74,28 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
       final response = await http.post(
         Uri.parse(_chatEndpoint),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'message': message}),
+        body: jsonEncode({
+          'userMessage': message,
+          'latitude': AppState.latitude,
+          'longitude': AppState.longitude,
+          'radiusKm': 5,
+        }),
       );
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
 
-        final botAnswer =
+        final answer =
+            decoded['aiResponse'] ??
+            decoded['AiResponse'] ??
             decoded['message'] ??
-            decoded['answer'] ??
             decoded['response'] ??
-            decoded['content'] ??
-            'Cevap alındı ancak metin okunamadı.';
+            'Cevap alındı ama metin okunamadı.';
 
         setState(() {
           _messages.add(
             _ChatMessage(
-              text: botAnswer.toString(),
+              text: answer.toString(),
               isUser: false,
             ),
           );
@@ -74,7 +104,8 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
         setState(() {
           _messages.add(
             _ChatMessage(
-              text: 'Şu anda cevap alınamadı. Backend API bağlantısını kontrol et.',
+              text:
+                  'Şu anda cevap alınamadı. Backend API bağlantısını kontrol et.',
               isUser: false,
             ),
           );
@@ -85,7 +116,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
         _messages.add(
           _ChatMessage(
             text:
-                'Sunucuya bağlanılamadı. Backend çalışıyor mu ve base URL doğru mu kontrol et.',
+                'Sunucuya bağlanılamadı. Backend açık mı ve port 5141 doğru mu kontrol et.',
             isUser: false,
           ),
         );
@@ -104,7 +135,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 280),
           curve: Curves.easeOut,
         );
       }
@@ -113,6 +144,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
 
   @override
   void dispose() {
+    _animationController.dispose();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -142,25 +174,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
         child: Column(
           children: [
             _buildHeader(),
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding,
-                  AppSpacing.lg,
-                  AppSpacing.screenPadding,
-                  AppSpacing.lg,
-                ),
-                itemCount: _messages.length + (_isLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (_isLoading && index == _messages.length) {
-                    return _buildTypingBubble();
-                  }
-
-                  return _buildMessageBubble(_messages[index]);
-                },
-              ),
-            ),
+            Expanded(child: _buildMessageList()),
             _buildInputArea(),
           ],
         ),
@@ -170,40 +184,47 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
 
   Widget _buildHeader() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(
-        AppSpacing.screenPadding,
-        AppSpacing.sm,
-        AppSpacing.screenPadding,
-        AppSpacing.md,
-      ),
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: AppColors.editorialGradient,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        gradient: AppColors.splashGradient,
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGreen.withValues(alpha: 0.18),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+            color: AppColors.primaryGreen.withValues(alpha: 0.22),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
       child: Row(
         children: [
-          Container(
-            width: 62,
-            height: 62,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Image.asset(
-              AppAssets.chatbotRobot,
-              fit: BoxFit.contain,
+          AnimatedBuilder(
+            animation: _robotFloat,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: Offset(0, _robotFloat.value),
+                child: child,
+              );
+            },
+            child: Container(
+              width: 64,
+              height: 64,
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                ),
+              ),
+              child: Image.asset(
+                AppAssets.chatbotRobot,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,14 +232,16 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
                 Text(
                   'Akıllı Yardımcı',
                   style: AppTextStyles.title.copyWith(
-                    color: AppColors.surface,
+                    color: Colors.white,
+                    fontSize: 20,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
                 Text(
-                  'Ürünler ve siparişler hakkında soru sorabilirsin.',
+                  'Konumuna göre ürün ve restoran önerileri sorabilirsin.',
                   style: AppTextStyles.bodySoft.copyWith(
-                    color: AppColors.surface.withValues(alpha: 0.85),
+                    color: Colors.white.withValues(alpha: 0.86),
+                    height: 1.35,
                   ),
                 ),
               ],
@@ -229,39 +252,56 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
     );
   }
 
+  Widget _buildMessageList() {
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      itemCount: _messages.length + (_isLoading ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (_isLoading && index == _messages.length) {
+          return _buildTypingBubble();
+        }
+
+        return _buildMessageBubble(_messages[index]);
+      },
+    );
+  }
+
   Widget _buildMessageBubble(_ChatMessage message) {
     final isUser = message.isUser;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
+          horizontal: 16,
+          vertical: 13,
         ),
-        constraints: const BoxConstraints(maxWidth: 280),
+        constraints: const BoxConstraints(maxWidth: 285),
         decoration: BoxDecoration(
-          color: isUser ? AppColors.primaryGreen : AppColors.surface,
+          gradient: isUser ? AppColors.editorialGradient : null,
+          color: isUser ? null : AppColors.surface,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: Radius.circular(isUser ? 20 : 4),
-            bottomRight: Radius.circular(isUser ? 4 : 20),
+            topLeft: const Radius.circular(22),
+            topRight: const Radius.circular(22),
+            bottomLeft: Radius.circular(isUser ? 22 : 6),
+            bottomRight: Radius.circular(isUser ? 6 : 22),
           ),
+          border: isUser ? null : Border.all(color: AppColors.surfaceContainer),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+              color: Colors.black.withValues(alpha: 0.045),
+              blurRadius: 14,
+              offset: const Offset(0, 7),
             ),
           ],
         ),
         child: Text(
           message.text,
           style: AppTextStyles.body.copyWith(
-            color: isUser ? AppColors.surface : AppColors.textDark,
-            height: 1.4,
+            color: isUser ? Colors.white : AppColors.textDark,
+            height: 1.45,
           ),
         ),
       ),
@@ -272,18 +312,33 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
+          horizontal: 14,
+          vertical: 12,
         ),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.surfaceContainer),
         ),
-        child: Text(
-          'EcoGrab düşünüyor...',
-          style: AppTextStyles.bodySoft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: Image.asset(
+                AppAssets.chatbotRobot,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'EcoGrab düşünüyor...',
+              style: AppTextStyles.bodySoft,
+            ),
+          ],
         ),
       ),
     );
@@ -291,56 +346,85 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
 
   Widget _buildInputArea() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.screenPadding,
-        AppSpacing.md,
-        AppSpacing.screenPadding,
-        AppSpacing.lg,
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
       decoration: BoxDecoration(
         color: AppColors.background,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, -6),
+            blurRadius: 18,
+            offset: const Offset(0, -8),
           ),
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: TextField(
               controller: _messageController,
               minLines: 1,
               maxLines: 4,
-              decoration: const InputDecoration(
-                hintText: 'Mesaj yaz...',
-              ),
+              textInputAction: TextInputAction.send,
               onSubmitted: (_) => _sendMessage(),
+              decoration: InputDecoration(
+                hintText: 'Mesaj yaz...',
+                filled: true,
+                fillColor: AppColors.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+                  borderSide: const BorderSide(
+                    color: AppColors.surfaceContainer,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+                  borderSide: const BorderSide(
+                    color: AppColors.surfaceContainer,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+                  borderSide: const BorderSide(
+                    color: AppColors.primaryGreen,
+                    width: 1.4,
+                  ),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
           GestureDetector(
             onTap: _sendMessage,
             child: Container(
-              width: 52,
-              height: 52,
+              width: 54,
+              height: 54,
               decoration: BoxDecoration(
                 gradient: AppColors.editorialGradient,
                 borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.20),
+                    blurRadius: 14,
+                    offset: const Offset(0, 7),
+                  ),
+                ],
               ),
               child: _isLoading
                   ? const Padding(
-                      padding: EdgeInsets.all(14),
+                      padding: EdgeInsets.all(15),
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.surface,
+                        color: Colors.white,
                       ),
                     )
                   : const Icon(
                       Icons.send_rounded,
-                      color: AppColors.surface,
+                      color: Colors.white,
                     ),
             ),
           ),

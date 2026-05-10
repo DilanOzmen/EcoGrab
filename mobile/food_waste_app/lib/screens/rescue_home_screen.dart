@@ -365,60 +365,88 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     );
   }
 
-  Widget _buildTopHeader() {
-    final fullName = AppState.currentUser?.fullName ?? 'Kullanıcı';
-    final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
+ Widget _buildTopHeader() {
+  final fullName = AppState.currentUser?.fullName ?? 'Kullanıcı';
+  final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
 
-    return Row(
-      children: [
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            color: AppColors.freshGreen.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
+  return Row(
+    children: [
+      Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          color: AppColors.freshGreen.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(16),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'EcoGrab',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryGreen,
-                ),
+        child: const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'EcoGrab',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: AppColors.primaryGreen,
               ),
-              Text(
-                'Grab smart, waste less.',
-                style: GoogleFonts.manrope(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSoft,
-                ),
+            ),
+            Text(
+              'Grab smart, waste less.',
+              style: GoogleFonts.manrope(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSoft,
+              ),
+            ),
+          ],
+        ),
+      ),
+      GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChatBotScreen()),
+          );
+        },
+        child: Container(
+          width: 44,
+          height: 44,
+          padding: const EdgeInsets.all(7),
+          margin: const EdgeInsets.only(right: 10),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryGreen.withValues(alpha: 0.14),
+                blurRadius: 14,
+                offset: const Offset(0, 7),
               ),
             ],
           ),
-        ),
-        CircleAvatar(
-          radius: 19,
-          backgroundColor: AppColors.primaryGreen,
-          child: Text(
-            initial,
-            style: GoogleFonts.plusJakartaSans(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-            ),
+          child: Image.asset(
+            'assets/images/chatbot_robot.png',
+            fit: BoxFit.contain,
           ),
         ),
-      ],
-    );
-  }
-
+      ),
+      CircleAvatar(
+        radius: 19,
+        backgroundColor: AppColors.primaryGreen,
+        child: Text(
+          initial,
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    ],
+  );
+}
   Widget _buildHeroCard(_HomeData data) {
     return Container(
       width: double.infinity,
