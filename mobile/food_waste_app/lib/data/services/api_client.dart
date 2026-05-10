@@ -113,6 +113,22 @@ class ApiClient {
         .toList();
   }
 
+  Future<List<Product>> getFilteredProducts(String category) async {
+    final uri = Uri.parse('$baseUrl/api/customer/products/filter').replace(
+      queryParameters: {'category': category},
+    );
+
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      throw ApiException('Urunler yuklenemedi.');
+    }
+
+    final list = jsonDecode(response.body) as List<dynamic>;
+    return list
+        .map((e) => Product.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   // ── Restaurants ───────────────────────────────────────────────────────────
 
   Future<List<Restaurant>> getRestaurants({

@@ -77,21 +77,22 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
   Future<_HomeData> _loadHomeData([_HomeCategoryFilter? filter]) async {
     final selectedFilter = filter ?? _selectedHomeFilter;
 
-    final String? categoryFilter = selectedFilter == _HomeCategoryFilter.all
-        ? null
-        : selectedFilter.apiValue;
-
-    // YENİ: API'ye konum verilerini gönderiyoruz
-    final results = await Future.wait([
-      _apiClient.getProducts(
-        category: categoryFilter,
+    final Future<List<Product>> productsFuture;
+    if (selectedFilter == _HomeCategoryFilter.all) {
+      productsFuture = _apiClient.getProducts(
         latitude: AppState.latitude,
         longitude: AppState.longitude,
-      ),
+      );
+    } else {
+      productsFuture = _apiClient.getFilteredProducts(selectedFilter.apiValue);
+    }
+
+    final results = await Future.wait([
+      productsFuture,
       _apiClient.getRestaurants(
         latitude: AppState.latitude,
         longitude: AppState.longitude,
-        radiusKm: 10, // 10km çapındaki restoranlar
+        radiusKm: 10,
       ),
     ]);
 
@@ -122,13 +123,13 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
 
   Future<void> _refreshHome() async {
     final future = _loadHomeData();
-    setState(() => _homeFuture = future);
+    setState(() { _homeFuture = future; });
     await future;
   }
 
   Future<void> _refreshOrders() async {
     final future = _loadOrdersData();
-    setState(() => _ordersFuture = future);
+    setState(() { _ordersFuture = future; });
     await future;
   }
 
@@ -577,34 +578,40 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
             onTap: () => _selectHomeCategory(_HomeCategoryFilter.all),
           ),
           CategoryChip(
-            icon: Icons.eco_rounded,
-            label: 'Sebze',
-            isSelected: _selectedHomeFilter == _HomeCategoryFilter.vegetables,
-            onTap: () => _selectHomeCategory(_HomeCategoryFilter.vegetables),
+            icon: Icons.cake_rounded,
+            label: 'Tatlılar',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.tatlilar,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.tatlilar),
           ),
           CategoryChip(
             icon: Icons.bakery_dining_rounded,
-            label: 'Fırın',
-            isSelected: _selectedHomeFilter == _HomeCategoryFilter.bakery,
-            onTap: () => _selectHomeCategory(_HomeCategoryFilter.bakery),
-          ),
-          CategoryChip(
-            icon: Icons.local_drink_rounded,
-            label: 'Süt',
-            isSelected: _selectedHomeFilter == _HomeCategoryFilter.dairy,
-            onTap: () => _selectHomeCategory(_HomeCategoryFilter.dairy),
-          ),
-          CategoryChip(
-            icon: Icons.apple_rounded,
-            label: 'Meyve',
-            isSelected: _selectedHomeFilter == _HomeCategoryFilter.fruit,
-            onTap: () => _selectHomeCategory(_HomeCategoryFilter.fruit),
+            label: 'Unlu',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.unluMamuller,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.unluMamuller),
           ),
           CategoryChip(
             icon: Icons.restaurant_rounded,
-            label: 'Yemek',
-            isSelected: _selectedHomeFilter == _HomeCategoryFilter.meal,
-            onTap: () => _selectHomeCategory(_HomeCategoryFilter.meal),
+            label: 'Yemekler',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.yemekler,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.yemekler),
+          ),
+          CategoryChip(
+            icon: Icons.local_cafe_rounded,
+            label: 'İçecekler',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.icecekler,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.icecekler),
+          ),
+          CategoryChip(
+            icon: Icons.rice_bowl_rounded,
+            label: 'Meze',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.meze,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.meze),
+          ),
+          CategoryChip(
+            icon: Icons.eco_rounded,
+            label: 'Salata',
+            isSelected: _selectedHomeFilter == _HomeCategoryFilter.salata,
+            onTap: () => _selectHomeCategory(_HomeCategoryFilter.salata),
           ),
         ],
       ),
@@ -731,7 +738,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
       height: 150,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: restaurants.take(8).length,
+        itemCount: restaurants.length,
         separatorBuilder: (_, __) => const SizedBox(width: 14),
         itemBuilder: (context, index) {
           final restaurant = restaurants[index];
@@ -1235,24 +1242,27 @@ class _StatusInfo {
   const _StatusInfo(this.text, this.color);
 }
 
-enum _HomeCategoryFilter { all, vegetables, bakery, dairy, fruit, meal }
+enum _HomeCategoryFilter { all, tatlilar, unluMamuller, yemekler, icecekler, meze, salata }
 
 extension on _HomeCategoryFilter {
   String get label => switch (this) {
-    _HomeCategoryFilter.all => 'Tüm',
-    _HomeCategoryFilter.vegetables => 'Sebze',
-    _HomeCategoryFilter.bakery => 'Fırın',
-    _HomeCategoryFilter.dairy => 'Süt',
-    _HomeCategoryFilter.fruit => 'Meyve',
-    _HomeCategoryFilter.meal => 'Yemek',
+    _HomeCategoryFilter.all         => 'Tümü',
+    _HomeCategoryFilter.tatlilar    => 'Tatlılar',
+    _HomeCategoryFilter.unluMamuller => 'Unlu',
+    _HomeCategoryFilter.yemekler    => 'Yemekler',
+    _HomeCategoryFilter.icecekler   => 'İçecekler',
+    _HomeCategoryFilter.meze        => 'Meze',
+    _HomeCategoryFilter.salata      => 'Salata',
   };
 
+  // Doğrudan veritabanındaki Category değerleriyle eşleşiyor
   String get apiValue => switch (this) {
-    _HomeCategoryFilter.all => '',
-    _HomeCategoryFilter.vegetables => 'Vegetables',
-    _HomeCategoryFilter.bakery => 'Bakery',
-    _HomeCategoryFilter.dairy => 'Dairy',
-    _HomeCategoryFilter.fruit => 'Fruit',
-    _HomeCategoryFilter.meal => 'Meal',
+    _HomeCategoryFilter.all         => '',
+    _HomeCategoryFilter.tatlilar    => 'Tatlilar',
+    _HomeCategoryFilter.unluMamuller => 'Unlu Mamuller',
+    _HomeCategoryFilter.yemekler    => 'Yemekler',
+    _HomeCategoryFilter.icecekler   => 'Içecekler',
+    _HomeCategoryFilter.meze        => 'Meze',
+    _HomeCategoryFilter.salata      => 'Salata',
   };
 }
