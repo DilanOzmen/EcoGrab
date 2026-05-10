@@ -8,7 +8,7 @@ import 'package:food_waste_app/data/models/product.dart';
 import 'package:food_waste_app/data/models/restaurant.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
 import 'package:food_waste_app/data/services/location_service.dart';
-
+import 'package:food_waste_app/core/app_assets.dart';
 import 'login_screen.dart';
 import 'map_view_screen.dart';
 import 'order_tracking_screen.dart';
@@ -366,45 +366,40 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     );
   }
 
- Widget _buildTopHeader() {
+Widget _buildTopHeader() {
   final fullName = AppState.currentUser?.fullName ?? 'Kullanıcı';
   final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
 
   return Row(
     children: [
       Container(
-        width: 46,
-        height: 46,
+        width: 58,
+        height: 58,
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: AppColors.freshGreen.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.freshGreen.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(18),
         ),
-        child: const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
+        child: Image.asset(
+          AppAssets.ecograbLogo,
+          fit: BoxFit.contain,
+        ),
       ),
+
       const SizedBox(width: 12),
+
       Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'EcoGrab',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: AppColors.primaryGreen,
-              ),
-            ),
-            Text(
-              'Grab smart, waste less.',
-              style: GoogleFonts.manrope(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSoft,
-              ),
-            ),
-          ],
+        child: Text(
+          'Akıllıca al,\nisrafı azalt.',
+          style: GoogleFonts.manrope(
+            fontSize: 12,
+            height: 1.25,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSoft,
+          ),
         ),
       ),
+
       GestureDetector(
         onTap: () {
           Navigator.push(
@@ -412,36 +407,76 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
             MaterialPageRoute(builder: (_) => const ChatBotScreen()),
           );
         },
-        child: Container(
-          width: 44,
-          height: 44,
-          padding: const EdgeInsets.all(7),
-          margin: const EdgeInsets.only(right: 10),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryGreen.withValues(alpha: 0.14),
-                blurRadius: 14,
-                offset: const Offset(0, 7),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.16),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Image.asset(
-            'assets/images/chatbot_robot.png',
-            fit: BoxFit.contain,
-          ),
+              child: Image.asset(
+                AppAssets.chatbotRobot,
+                fit: BoxFit.contain,
+              ),
+            ),
+            Positioned(
+              top: -24,
+              right: -2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.20),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  'Yardım ister misin?',
+                  style: GoogleFonts.manrope(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      CircleAvatar(
-        radius: 19,
-        backgroundColor: AppColors.primaryGreen,
-        child: Text(
-          initial,
-          style: GoogleFonts.plusJakartaSans(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
+
+      const SizedBox(width: 12),
+
+      GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedIndex = 3;
+          });
+        },
+        child: CircleAvatar(
+          radius: 21,
+          backgroundColor: AppColors.primaryGreen,
+          child: Text(
+            initial,
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ),

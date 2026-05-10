@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:food_waste_app/screens/seller_profile_screen.dart';
 import 'package:food_waste_app/core/app_assets.dart';
 import 'package:food_waste_app/core/app_colors.dart';
 import 'package:food_waste_app/core/app_spacing.dart';
@@ -81,6 +81,17 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
     );
   }
 
+  void _openSellerProfile() {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => SellerProfileScreen(
+        onLogout: _logout,
+      ),
+    ),
+  );
+}
+
   void _logout() {
     AppState.clear();
 
@@ -153,47 +164,52 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
     );
   }
 
-  Widget _buildTopBar() {
-    return Row(
-      children: [
-        Image.asset(
-          AppAssets.ecograbLogo,
-          width: 42,
-          height: 42,
-          fit: BoxFit.contain,
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Satıcı Paneli',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryGreen,
-                ),
+ Widget _buildTopBar() {
+  return Row(
+    children: [
+      Image.asset(
+        AppAssets.ecograbLogo,
+        width: 42,
+        height: 42,
+        fit: BoxFit.contain,
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Satıcı Paneli',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: AppColors.primaryGreen,
               ),
-              Text(
-                'Ürünlerini yönet, israfı azalt.',
-                style: GoogleFonts.manrope(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSoft,
-                ),
+            ),
+            Text(
+              'Ürünlerini yönet, israfı azalt.',
+              style: GoogleFonts.manrope(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSoft,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        IconButton(
-          onPressed: _logout,
-          icon: const Icon(Icons.logout_rounded),
-          color: AppColors.error,
-        ),
-      ],
-    );
-  }
+      ),
+      IconButton(
+        onPressed: _openSellerProfile,
+        icon: const Icon(Icons.person_outline_rounded),
+        color: AppColors.primaryGreen,
+      ),
+      IconButton(
+        onPressed: _logout,
+        icon: const Icon(Icons.logout_rounded),
+        color: AppColors.error,
+      ),
+    ],
+  );
+}
 
   Widget _buildHeroCard(List<SellerProduct> products) {
     final totalStock = products.fold<int>(0, (sum, item) => sum + item.stock);
