@@ -123,13 +123,17 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
 
   Future<void> _refreshHome() async {
     final future = _loadHomeData();
-    setState(() { _homeFuture = future; });
+    setState(() {
+      _homeFuture = future;
+    });
     await future;
   }
 
   Future<void> _refreshOrders() async {
     final future = _loadOrdersData();
-    setState(() { _ordersFuture = future; });
+    setState(() {
+      _ordersFuture = future;
+    });
     await future;
   }
 
@@ -366,123 +370,121 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     );
   }
 
-Widget _buildTopHeader() {
-  final fullName = AppState.currentUser?.fullName ?? 'Kullanıcı';
-  final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
+  Widget _buildTopHeader() {
+    final fullName = AppState.currentUser?.fullName ?? 'Kullanıcı';
+    final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
 
-  return Row(
-    children: [
-      Container(
-        width: 58,
-        height: 58,
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: AppColors.freshGreen.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(18),
+    return Row(
+      children: [
+        Container(
+          width: 58,
+          height: 58,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.freshGreen.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Image.asset(AppAssets.ecograbLogo, fit: BoxFit.contain),
         ),
-        child: Image.asset(
-          AppAssets.ecograbLogo,
-          fit: BoxFit.contain,
-        ),
-      ),
 
-      const SizedBox(width: 12),
+        const SizedBox(width: 12),
 
-      Expanded(
-        child: Text(
-          'Akıllıca al,\nisrafı azalt.',
-          style: GoogleFonts.manrope(
-            fontSize: 12,
-            height: 1.25,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textSoft,
+        Expanded(
+          child: Text(
+            'Akıllıca al,\nisrafı azalt.',
+            style: GoogleFonts.manrope(
+              fontSize: 12,
+              height: 1.25,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSoft,
+            ),
           ),
         ),
-      ),
 
-      GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ChatBotScreen()),
-          );
-        },
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.16),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Image.asset(
-                AppAssets.chatbotRobot,
-                fit: BoxFit.contain,
-              ),
-            ),
-            Positioned(
-              top: -24,
-              right: -2,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChatBotScreen()),
+            );
+          },
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGreen,
-                  borderRadius: BorderRadius.circular(999),
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.20),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+                      color: AppColors.primaryGreen.withValues(alpha: 0.16),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
-                child: Text(
-                  'Yardım ister misin?',
-                  style: GoogleFonts.manrope(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
+                child: Image.asset(AppAssets.chatbotRobot, fit: BoxFit.contain),
+              ),
+              Positioned(
+                top: -24,
+                right: -2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.20),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    'Yardım ister misin?',
+                    style: GoogleFonts.manrope(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
 
-      const SizedBox(width: 12),
+        const SizedBox(width: 12),
 
-      GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedIndex = 3;
-          });
-        },
-        child: CircleAvatar(
-          radius: 21,
-          backgroundColor: AppColors.primaryGreen,
-          child: Text(
-            initial,
-            style: GoogleFonts.plusJakartaSans(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedIndex = 3;
+            });
+          },
+          child: CircleAvatar(
+            radius: 21,
+            backgroundColor: AppColors.primaryGreen,
+            child: Text(
+              initial,
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
+
   Widget _buildHeroCard(_HomeData data) {
     return Container(
       width: double.infinity,
@@ -1277,27 +1279,35 @@ class _StatusInfo {
   const _StatusInfo(this.text, this.color);
 }
 
-enum _HomeCategoryFilter { all, tatlilar, unluMamuller, yemekler, icecekler, meze, salata }
+enum _HomeCategoryFilter {
+  all,
+  tatlilar,
+  unluMamuller,
+  yemekler,
+  icecekler,
+  meze,
+  salata,
+}
 
 extension on _HomeCategoryFilter {
   String get label => switch (this) {
-    _HomeCategoryFilter.all         => 'Tümü',
-    _HomeCategoryFilter.tatlilar    => 'Tatlılar',
+    _HomeCategoryFilter.all => 'Tümü',
+    _HomeCategoryFilter.tatlilar => 'Tatlılar',
     _HomeCategoryFilter.unluMamuller => 'Unlu',
-    _HomeCategoryFilter.yemekler    => 'Yemekler',
-    _HomeCategoryFilter.icecekler   => 'İçecekler',
-    _HomeCategoryFilter.meze        => 'Meze',
-    _HomeCategoryFilter.salata      => 'Salata',
+    _HomeCategoryFilter.yemekler => 'Yemekler',
+    _HomeCategoryFilter.icecekler => 'İçecekler',
+    _HomeCategoryFilter.meze => 'Meze',
+    _HomeCategoryFilter.salata => 'Salata',
   };
 
   // Doğrudan veritabanındaki Category değerleriyle eşleşiyor
   String get apiValue => switch (this) {
-    _HomeCategoryFilter.all         => '',
-    _HomeCategoryFilter.tatlilar    => 'Tatlilar',
+    _HomeCategoryFilter.all => '',
+    _HomeCategoryFilter.tatlilar => 'Tatlilar',
     _HomeCategoryFilter.unluMamuller => 'Unlu Mamuller',
-    _HomeCategoryFilter.yemekler    => 'Yemekler',
-    _HomeCategoryFilter.icecekler   => 'Içecekler',
-    _HomeCategoryFilter.meze        => 'Meze',
-    _HomeCategoryFilter.salata      => 'Salata',
+    _HomeCategoryFilter.yemekler => 'Yemekler',
+    _HomeCategoryFilter.icecekler => 'Içecekler',
+    _HomeCategoryFilter.meze => 'Meze',
+    _HomeCategoryFilter.salata => 'Salata',
   };
 }

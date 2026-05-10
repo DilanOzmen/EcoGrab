@@ -110,9 +110,9 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _initials(String nameOrEmail) {
@@ -159,7 +159,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
         final data = snapshot.data ?? {};
 
-        final fullName = data['fullName']?.toString() ??
+        final fullName =
+            data['fullName']?.toString() ??
             AppState.currentUser?.fullName ??
             'Kullanıcı';
 
@@ -195,7 +196,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                           _infoCard(email, phone, role),
                           const SizedBox(height: 18),
                           _editProfileCard(),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 18), // Boşluk ekledik
+                          _changePasswordCard(), // <-- MÜŞTERİ İÇİN ŞİFRE DEĞİŞTİRME KARTI BURADA
+                          const SizedBox(height: 18), // Boşluk ekledik
                           _menuItem(
                             icon: Icons.receipt_long_rounded,
                             title: 'Sipariş ve Rezervasyonlarım',
@@ -359,6 +362,81 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  // Şifre değiştirme penceresini açan fonksiyon
+  void _showChangePasswordDialog() {
+    final oldController = TextEditingController();
+    final newController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text(
+          'Şifre Değiştir',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: oldController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Mevcut Şifre',
+                prefixIcon: Icon(Icons.lock_open),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Yeni Şifre',
+                prefixIcon: Icon(Icons.lock_outline),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Vazgeç'),
+          ),
+          ElevatedButton(
+            onPressed: () =>
+                _handleChangePassword(oldController.text, newController.text),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+            ),
+            child: const Text(
+              'Güncelle',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // API isteğini atan fonksiyon
+  Future<void> _handleChangePassword(String oldP, String newP) async {
+    try {
+      final apiClient =
+          ApiClient(); // Dosyanın başında import edildiğinden emin ol
+      await apiClient.changePassword(oldPassword: oldP, newPassword: newP);
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Şifre başarıyla güncellendi.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
   Widget _infoCard(String email, String phone, String role) {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -437,8 +515,9 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 240),
-            crossFadeState:
-                _editing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: _editing
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             firstChild: Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
@@ -473,8 +552,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color:
-                              AppColors.primaryGreen.withValues(alpha: 0.18),
+                          color: AppColors.primaryGreen.withValues(alpha: 0.18),
                           blurRadius: 18,
                           offset: const Offset(0, 8),
                         ),
@@ -528,10 +606,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: AppColors.primaryGreen,
-          width: 1.3,
-        ),
+        borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.3),
       ),
     );
   }
@@ -600,11 +675,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         color: AppColors.freshGreen.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Icon(
-        icon,
-        color: AppColors.primaryGreen,
-        size: 21,
-      ),
+      child: Icon(icon, color: AppColors.primaryGreen, size: 21),
     );
   }
 
@@ -658,6 +729,47 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _changePasswordCard() {
+    return Container(
+      margin: const EdgeInsets.only(top: 18), // Diğer kartlarla arayı açar
+      padding: const EdgeInsets.all(18),
+      decoration: _cardDecoration(), // Mevcut kart tasarımıyla aynı olur
+      child: Row(
+        children: [
+          _miniIcon(Icons.lock_reset_rounded), // Kilit ikonu
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Şifre İşlemleri',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                Text(
+                  'Güvenliğin için şifreni buradan güncelleyebilirsin.',
+                  style: GoogleFonts.manrope(
+                    color: AppColors.textSoft,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: _showChangePasswordDialog, // Pop-up'ı açar
+            child: const Text('Değiştir'),
+          ),
+        ],
       ),
     );
   }

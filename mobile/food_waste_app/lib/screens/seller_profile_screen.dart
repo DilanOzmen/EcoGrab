@@ -9,10 +9,7 @@ import 'package:food_waste_app/data/services/api_client.dart';
 class SellerProfileScreen extends StatefulWidget {
   final VoidCallback onLogout;
 
-  const SellerProfileScreen({
-    super.key,
-    required this.onLogout,
-  });
+  const SellerProfileScreen({super.key, required this.onLogout});
 
   @override
   State<SellerProfileScreen> createState() => _SellerProfileScreenState();
@@ -45,20 +42,12 @@ class _SellerProfileScreenState extends State<SellerProfileScreen>
       duration: const Duration(milliseconds: 650),
     );
 
-    _fade = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
 
     _slide = Tween<Offset>(
       begin: const Offset(0, 0.05),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
   }
@@ -76,6 +65,77 @@ class _SellerProfileScreenState extends State<SellerProfileScreen>
     final future = _loadProfile();
     setState(() => _profileFuture = future);
     await future;
+  }
+
+  // 1. Şifre değiştirme mantığını yöneten metod
+  Future<void> _handleChangePassword(String oldP, String newP) async {
+    try {
+      await _apiClient.changePassword(oldPassword: oldP, newPassword: newP);
+      if (!mounted) return;
+      Navigator.pop(context); // Dialog'u kapat
+      _showMessage('Şifreniz başarıyla değiştirildi.');
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage(e.toString());
+    }
+  }
+
+  // 2. Şifre değiştirme pop-up'ını (Dialog) gösteren metod
+  void _showChangePasswordDialog() {
+    final oldController = TextEditingController();
+    final newController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'Şifre Değiştir',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: oldController,
+              obscureText: true,
+              decoration: _input('Mevcut Şifre', Icons.lock_open_rounded),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newController,
+              obscureText: true,
+              decoration: _input('Yeni Şifre', Icons.lock_outline_rounded),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Vazgeç', style: TextStyle(color: AppColors.textSoft)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (oldController.text.isEmpty || newController.text.isEmpty) {
+                _showMessage('Lütfen tüm alanları doldurun.');
+                return;
+              }
+              _handleChangePassword(oldController.text, newController.text);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Güncelle',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _saveProfile() async {
@@ -112,9 +172,9 @@ class _SellerProfileScreenState extends State<SellerProfileScreen>
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _initials(String value) {
@@ -162,9 +222,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen>
           return const Scaffold(
             backgroundColor: AppColors.background,
             body: Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primaryGreen,
-              ),
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
             ),
           );
         }
@@ -175,7 +233,8 @@ class _SellerProfileScreenState extends State<SellerProfileScreen>
 
         final data = snapshot.data ?? {};
 
-        final fullName = data['fullName']?.toString() ??
+        final fullName =
+            data['fullName']?.toString() ??
             AppState.currentUser?.fullName ??
             'Satıcı';
 
@@ -211,6 +270,8 @@ class _SellerProfileScreenState extends State<SellerProfileScreen>
                           _infoCard(email, phone, role),
                           const SizedBox(height: 18),
                           _editProfileCard(),
+                          const SizedBox(height: 18),
+                          _changePasswordCard(), // <-- ŞİFRE DEĞİŞTİRME KARTI BURAYA EKLENDİ
                           const SizedBox(height: 18),
                           _sellerNoteCard(),
                           const SizedBox(height: 16),
@@ -438,8 +499,9 @@ class _SellerProfileScreenState extends State<SellerProfileScreen>
           ),
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 240),
-            crossFadeState:
-                _editing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: _editing
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             firstChild: Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
@@ -516,6 +578,55 @@ class _SellerProfileScreenState extends State<SellerProfileScreen>
     );
   }
 
+  Widget _changePasswordCard() {
+    return InkWell(
+      // Tıklanabilir olması için InkWell ekledik
+      onTap: _showChangePasswordDialog,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white, // Rengi garantilemek için direkt beyaz verdik
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Colors.grey.shade200,
+          ), // Kenarlık belirgin olsun
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.vpn_key_outlined, color: Colors.green),
+            ),
+            const SizedBox(width: 15),
+            const Expanded(
+              child: Text(
+                'Şifremi Değiştir',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _sellerNoteCard() {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -551,10 +662,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen>
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: AppColors.primaryGreen,
-          width: 1.3,
-        ),
+        borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.3),
       ),
     );
   }
@@ -586,11 +694,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen>
         color: AppColors.freshGreen.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Icon(
-        icon,
-        color: AppColors.primaryGreen,
-        size: 21,
-      ),
+      child: Icon(icon, color: AppColors.primaryGreen, size: 21),
     );
   }
 

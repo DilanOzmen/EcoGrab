@@ -32,6 +32,26 @@ class ApiClient {
     };
   }
 
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/auth/change-password'),
+      headers: _authHeaders(),
+      body: jsonEncode({
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+      }),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Sifre degistirme basarisiz.'),
+      );
+    }
+  }
+
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   Future<AuthResponse> login(String email, String password) async {
