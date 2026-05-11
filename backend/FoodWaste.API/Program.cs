@@ -3,10 +3,11 @@ using FoodWaste.API.Middleware;
 using FoodWaste.API.Options;
 using FoodWaste.API.Services;
 using FoodWaste.Business;
-using FoodWaste.Business.Abstractions; // Burayı ekledim
-using FoodWaste.Business.Services;    // Burayı ekledim
+using FoodWaste.Business.Abstractions; 
+using FoodWaste.Business.Services;    
 using FoodWaste.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore; // Bu satırı ekledim
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -18,7 +19,7 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "EcoGrab API", // Yeni markamızla güncelledim :)
+        Title = "EcoGrab API", 
         Version = "v1"
     });
 
@@ -49,48 +50,34 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFlutterWeb", policy =>
-    {
-        policy
-            .WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175")
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
-    });
-    
     options.AddPolicy("AllowDevelopment", policy =>
     {
         policy
-            .SetIsOriginAllowed(origin =>
-            {
-                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
-                {
-                    return false;
-                }
-
-                if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
-                {
-                    return false;
-                }
-
-                var host = uri.Host;
-                return host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-                       || host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("192.168.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("10.", StringComparison.OrdinalIgnoreCase)
-                       || host.StartsWith("172.16.", StringComparison.OrdinalIgnoreCase);
-            })
+            .AllowAnyOrigin() // Test asamasinda tum cihazlar (emulator vs) erisebilsin
             .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
+            .AllowAnyHeader();
+            // .AllowCredentials(); // AllowAnyOrigin varken bu kapali olmali
     });
 });
 
 builder.Services.AddControllers();
-builder.Services.AddDataAccess(builder.Configuration);
+
+// --- VERITABANI BAGLANTI AYARI (AZURE UYKU MODU COZUMU) ---
+builder.Services.AddDbContext<FoodWasteDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+    sqlServerOptionsAction: sqlOptions =>
+    {
+        // Azure SQL uyanana kadar 10 kez denemesini soyluyoruz
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 10,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
+    }));
+
+// Diger servisleri eklemeye devam ediyoruz
+builder.Services.AddDataAccess(builder.Configuration); 
 builder.Services.AddBusiness();
 
-// Chatbot Servisimizi buraya ekledim
 builder.Services.AddScoped<IChatService, ChatService>();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
@@ -139,9 +126,8 @@ else
 }
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
-app.UseCors("AllowDevelopment");
+app.UseCors("AllowDevelopment"); // Guncellenen politikayi kullaniyoruz
 app.UseAuthentication();
-app.UseStaticFiles(); 
 app.UseAuthorization();
 
 app.MapGet("/", () => Results.Ok(new
