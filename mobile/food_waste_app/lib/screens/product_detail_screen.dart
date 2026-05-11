@@ -67,6 +67,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   double get _totalPrice => widget.product.discountedPrice * _quantity;
 
+  String? _absoluteImageUrl(String? imageUrl) {
+    final value = imageUrl?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    if (value.startsWith('/')) {
+      return '${ApiClient.baseUrl}$value';
+    }
+
+    return '${ApiClient.baseUrl}/$value';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,9 +138,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.splashGradient,
-          ),
+          decoration: const BoxDecoration(gradient: AppColors.splashGradient),
           child: Stack(
             children: [
               Positioned(
@@ -136,20 +151,32 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
               ),
               Center(
-                child: Container(
-                  width: 132,
-                  height: 132,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.13),
-                    borderRadius: BorderRadius.circular(38),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.12),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(38),
+                  child: Container(
+                    width: 132,
+                    height: 132,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.13),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.12),
+                      ),
                     ),
-                  ),
-                  child: const Icon(
-                    Icons.fastfood_rounded,
-                    size: 74,
-                    color: Colors.white,
+                    child: _absoluteImageUrl(widget.product.imageUrl) == null
+                        ? const Icon(
+                            Icons.fastfood_rounded,
+                            size: 74,
+                            color: Colors.white,
+                          )
+                        : Image.network(
+                            _absoluteImageUrl(widget.product.imageUrl)!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.broken_image_outlined,
+                              size: 64,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -476,8 +503,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               borderRadius: BorderRadius.circular(18),
             ),
             child: ElevatedButton(
-              onPressed:
-                  widget.product.stock > 0 && !_isLoading ? _reserve : null,
+              onPressed: widget.product.stock > 0 && !_isLoading
+                  ? _reserve
+                  : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,

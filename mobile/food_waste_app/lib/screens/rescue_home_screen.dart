@@ -674,6 +674,70 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     );
   }
 
+  String? _toAbsoluteImageUrl(String? imageUrl) {
+    final value = imageUrl?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    final base = ApiClient.baseUrl;
+    if (value.startsWith('/')) {
+      return '$base$value';
+    }
+
+    return '$base/$value';
+  }
+
+  Widget _productThumbnail(
+    Product product, {
+    double size = 58,
+    double radius = 18,
+    Color fallbackBackground = AppColors.freshGreen,
+    Color fallbackIconColor = AppColors.primaryGreen,
+  }) {
+    final url = _toAbsoluteImageUrl(product.imageUrl);
+
+    if (url == null) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: fallbackBackground.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(radius),
+        ),
+        child: Icon(
+          Icons.fastfood_rounded,
+          color: fallbackIconColor,
+          size: size * 0.46,
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: Image.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          width: size,
+          height: size,
+          color: fallbackBackground.withValues(alpha: 0.15),
+          child: Icon(
+            Icons.broken_image_outlined,
+            color: fallbackIconColor,
+            size: size * 0.44,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildHorizontalProductList(List<Product> products) {
     return SizedBox(
       height: 210,
@@ -715,6 +779,17 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
                     top: 0,
                     left: 0,
                     child: _discountBadge(product.discountPercent),
+                  ),
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: _productThumbnail(
+                      product,
+                      size: 68,
+                      radius: 16,
+                      fallbackBackground: Colors.white,
+                      fallbackIconColor: Colors.white,
+                    ),
                   ),
                   Positioned(
                     left: 0,
@@ -843,7 +918,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
         decoration: _cardDecoration(),
         child: Row(
           children: [
-            _iconBox(Icons.fastfood_rounded),
+            _productThumbnail(product),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
