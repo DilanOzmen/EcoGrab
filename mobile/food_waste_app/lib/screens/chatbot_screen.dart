@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:lottie/lottie.dart';
 import 'package:food_waste_app/core/app_assets.dart';
 import 'package:food_waste_app/core/app_colors.dart';
 import 'package:food_waste_app/core/app_spacing.dart';
@@ -218,8 +218,8 @@ void initState() {
                   color: Colors.white.withValues(alpha: 0.15),
                 ),
               ),
-              child: Image.asset(
-                AppAssets.chatbotRobot,
+              child: Lottie.asset(
+                AppAssets.chatbotRobotLottie,
                 fit: BoxFit.contain,
               ),
             ),
@@ -328,10 +328,10 @@ void initState() {
             SizedBox(
               width: 22,
               height: 22,
-              child: Image.asset(
-                AppAssets.chatbotRobot,
-                fit: BoxFit.contain,
-              ),
+              child:Lottie.asset(
+  AppAssets.chatbotRobotLottie,
+  fit: BoxFit.contain,
+),
             ),
             const SizedBox(width: 8),
             Text(

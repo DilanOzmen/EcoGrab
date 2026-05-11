@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
+
 import 'package:food_waste_app/screens/chatbot_screen.dart';
 import 'package:food_waste_app/core/app_colors.dart';
 import 'package:food_waste_app/core/app_state.dart';
@@ -9,6 +13,7 @@ import 'package:food_waste_app/data/models/restaurant.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
 import 'package:food_waste_app/data/services/location_service.dart';
 import 'package:food_waste_app/core/app_assets.dart';
+
 import 'login_screen.dart';
 import 'map_view_screen.dart';
 import 'order_tracking_screen.dart';
@@ -43,6 +48,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
   late final Animation<double> _fade;
   late final Animation<Offset> _slide;
 
+  Timer? _chatBotTimer;
+  bool _isChatBotOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -50,12 +58,12 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     _apiClient = widget.apiClient;
     _selectedIndex = widget.initialIndex;
 
-    _homeFuture = _loadHomeData();
+    _homeFuture = _bootstrapHomeData();
     _ordersFuture = _loadOrdersData();
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 650),
+      duration: const Duration(milliseconds: 700),
     );
 
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
@@ -66,12 +74,28 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
+
+    _chatBotTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
+      setState(() {
+        _isChatBotOpen = !_isChatBotOpen;
+      });
+    });
   }
 
   @override
   void dispose() {
+    _chatBotTimer?.cancel();
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<_HomeData> _bootstrapHomeData() async {
+    try {
+      await LocationService.fetchAndSaveLocation();
+    } catch (_) {}
+
+    return _loadHomeData(_HomeCategoryFilter.all);
   }
 
   Future<_HomeData> _loadHomeData([_HomeCategoryFilter? filter]) async {
@@ -215,9 +239,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     }
   }
 
-  // YENİ: Konum Barı Tasarımı
   Widget _buildLocationBar() {
-    final address = AppState.currentAddress ?? "Konum alınıyor...";
+    final address = AppState.currentAddress ?? "Konum alındı";
+
     return GestureDetector(
       onTap: () async {
         await LocationService.fetchAndSaveLocation();
@@ -273,9 +297,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
             return _buildErrorState(
               title: 'Veriler yüklenemedi',
               message: snapshot.error.toString().replaceAll(
-                'ApiException: ',
-                '',
-              ),
+                    'ApiException: ',
+                    '',
+                  ),
             );
           }
 
@@ -305,7 +329,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
                       children: [
                         _buildTopHeader(),
                         const SizedBox(height: 12),
-                        _buildLocationBar(), // BU SATIRI EKLE (Hata bu yüzden yanıyor)
+                        _buildLocationBar(),
                         const SizedBox(height: 18),
                         _buildHeroCard(data),
                         const SizedBox(height: 22),
@@ -350,9 +374,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
                             message: 'Henüz ürün eklenmemiş.',
                           )
                         else
-                          ...data.products.map(
-                            (product) => _buildSimpleProductCard(product),
-                          ),
+                          ...data.products
+                              .take(8)
+                              .map((product) => _buildSimpleProductCard(product)),
                       ],
                     ),
                   ),
@@ -371,92 +395,104 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
 
     return Row(
       children: [
-        Container(
-          width: 58,
-          height: 58,
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: AppColors.freshGreen.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Image.asset(AppAssets.ecograbLogo, fit: BoxFit.contain),
-        ),
+        AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final scale = Curves.elasticOut.transform(_controller.value);
 
-        const SizedBox(width: 12),
-
-        Expanded(
-          child: Text(
-            'Akıllıca al,\nisrafı azalt.',
-            style: GoogleFonts.manrope(
-              fontSize: 12,
-              height: 1.25,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSoft,
-            ),
-          ),
-        ),
-
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ChatBotScreen()),
+            return Transform.scale(
+              scale: scale,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 76,
+                    height: 76,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primaryGreen.withValues(alpha: 0.06),
+                      border: Border.all(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.10),
+                          blurRadius: 22,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    top: 6,
+                    right: 10,
+                    child: Icon(
+                      Icons.eco_rounded,
+                      size: 18,
+                      color: AppColors.freshGreen.withValues(alpha: 0.75),
+                    ),
+                  ),
+                  Positioned(
+                    left: 7,
+                    bottom: 12,
+                    child: Transform.rotate(
+                      angle: -0.7,
+                      child: Icon(
+                        Icons.eco_rounded,
+                        size: 18,
+                        color: AppColors.primaryGreen.withValues(alpha: 0.24),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 56,
+                    height: 56,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    child: Image.asset(
+                      AppAssets.ecograbLogo,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ],
+              ),
             );
           },
-          child: Stack(
-            clipBehavior: Clip.none,
+        ),
+
+        const SizedBox(width: 14),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.16),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+              Text(
+                'EcoGrab',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primaryGreen,
                 ),
-                child: Image.asset(AppAssets.chatbotRobot, fit: BoxFit.contain),
               ),
-              Positioned(
-                top: -24,
-                right: -2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen,
-                    borderRadius: BorderRadius.circular(999),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.20),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    'Yardım ister misin?',
-                    style: GoogleFonts.manrope(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+              const SizedBox(height: 4),
+              Text(
+                'Daha az israf, daha iyi gelecek.',
+                style: GoogleFonts.manrope(
+                  fontSize: 12,
+                  height: 1.25,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSoft,
                 ),
               ),
             ],
           ),
         ),
-
-        const SizedBox(width: 12),
 
         GestureDetector(
           onTap: () {
@@ -465,7 +501,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
             });
           },
           child: CircleAvatar(
-            radius: 21,
+            radius: 22,
             backgroundColor: AppColors.primaryGreen,
             child: Text(
               initial,
@@ -477,6 +513,81 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFloatingChatBot() {
+    if (_selectedIndex != 0) return const SizedBox.shrink();
+
+    return Positioned(
+      right: 0,
+      bottom: 128,
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ChatBotScreen(),
+            ),
+          );
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 650),
+          curve: Curves.easeInOutCubic,
+          width: _isChatBotOpen ? 118 : 54,
+          height: 64,
+          decoration: BoxDecoration(
+            color: AppColors.primaryGreen,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(32),
+              bottomLeft: Radius.circular(32),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryGreen.withValues(alpha: 0.30),
+                blurRadius: 22,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              if (_isChatBotOpen)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 14),
+                    child: Text(
+                      'Yardım\nister misin?',
+                      style: GoogleFonts.manrope(
+                        color: Colors.white,
+                        fontSize: 10,
+                        height: 1.15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              Container(
+                width: 54,
+                height: 54,
+                margin: const EdgeInsets.only(right: 3),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(5),
+                  child: Lottie.asset(
+                    AppAssets.chatbotRobotLottie,
+                    fit: BoxFit.contain,
+                    repeat: true,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -674,15 +785,81 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     );
   }
 
+  String? _toAbsoluteImageUrl(String? imageUrl) {
+    final value = imageUrl?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    final base = ApiClient.baseUrl;
+    if (value.startsWith('/')) {
+      return '$base$value';
+    }
+
+    return '$base/$value';
+  }
+
+  Widget _productThumbnail(
+    Product product, {
+    double size = 58,
+    double radius = 18,
+    Color fallbackBackground = AppColors.freshGreen,
+    Color fallbackIconColor = AppColors.primaryGreen,
+  }) {
+    final url = _toAbsoluteImageUrl(product.imageUrl);
+
+    if (url == null) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: fallbackBackground.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(radius),
+        ),
+        child: Icon(
+          Icons.fastfood_rounded,
+          color: fallbackIconColor,
+          size: size * 0.46,
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: Image.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          width: size,
+          height: size,
+          color: fallbackBackground.withValues(alpha: 0.15),
+          child: Icon(
+            Icons.broken_image_outlined,
+            color: fallbackIconColor,
+            size: size * 0.44,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildHorizontalProductList(List<Product> products) {
+    final visibleProducts = products.take(8).toList();
+
     return SizedBox(
       height: 210,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: products.take(8).length,
+        itemCount: visibleProducts.length,
         separatorBuilder: (_, __) => const SizedBox(width: 14),
         itemBuilder: (context, index) {
-          final product = products[index];
+          final product = visibleProducts[index];
 
           return GestureDetector(
             onTap: () => _openProductDetail(product),
@@ -715,6 +892,17 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
                     top: 0,
                     left: 0,
                     child: _discountBadge(product.discountPercent),
+                  ),
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: _productThumbnail(
+                      product,
+                      size: 68,
+                      radius: 16,
+                      fallbackBackground: Colors.white,
+                      fallbackIconColor: Colors.white,
+                    ),
                   ),
                   Positioned(
                     left: 0,
@@ -843,7 +1031,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
         decoration: _cardDecoration(),
         child: Row(
           children: [
-            _iconBox(Icons.fastfood_rounded),
+            _productThumbnail(product),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -900,9 +1088,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
             return _buildErrorState(
               title: 'Siparişler yüklenemedi',
               message: snapshot.error.toString().replaceAll(
-                'ApiException: ',
-                '',
-              ),
+                    'ApiException: ',
+                    '',
+                  ),
             );
           }
 
@@ -1196,7 +1384,12 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: _buildBody(),
+      body: Stack(
+        children: [
+          _buildBody(),
+          _buildFloatingChatBot(),
+        ],
+      ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
@@ -1286,23 +1479,22 @@ enum _HomeCategoryFilter {
 
 extension on _HomeCategoryFilter {
   String get label => switch (this) {
-    _HomeCategoryFilter.all => 'Tümü',
-    _HomeCategoryFilter.tatlilar => 'Tatlılar',
-    _HomeCategoryFilter.unluMamuller => 'Unlu',
-    _HomeCategoryFilter.yemekler => 'Yemekler',
-    _HomeCategoryFilter.icecekler => 'İçecekler',
-    _HomeCategoryFilter.meze => 'Meze',
-    _HomeCategoryFilter.salata => 'Salata',
-  };
+        _HomeCategoryFilter.all => 'Tümü',
+        _HomeCategoryFilter.tatlilar => 'Tatlılar',
+        _HomeCategoryFilter.unluMamuller => 'Unlu',
+        _HomeCategoryFilter.yemekler => 'Yemekler',
+        _HomeCategoryFilter.icecekler => 'İçecekler',
+        _HomeCategoryFilter.meze => 'Meze',
+        _HomeCategoryFilter.salata => 'Salata',
+      };
 
-  // Doğrudan veritabanındaki Category değerleriyle eşleşiyor
   String get apiValue => switch (this) {
-    _HomeCategoryFilter.all => '',
-    _HomeCategoryFilter.tatlilar => 'Tatlı',
-    _HomeCategoryFilter.unluMamuller => 'Unlu Mamuller',
-    _HomeCategoryFilter.yemekler => 'Yemekler',
-    _HomeCategoryFilter.icecekler => 'İçecek',
-    _HomeCategoryFilter.meze => 'Meze',
-    _HomeCategoryFilter.salata => 'Salata',
-  };
+        _HomeCategoryFilter.all => '',
+        _HomeCategoryFilter.tatlilar => 'Tatlilar',
+        _HomeCategoryFilter.unluMamuller => 'Unlu Mamuller',
+        _HomeCategoryFilter.yemekler => 'Yemekler',
+        _HomeCategoryFilter.icecekler => 'Içecekler',
+        _HomeCategoryFilter.meze => 'Meze',
+        _HomeCategoryFilter.salata => 'Salata',
+      };
 }
