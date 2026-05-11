@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:food_waste_app/core/app_theme.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
-import 'package:food_waste_app/data/services/location_service.dart'; // Eklendi
+import 'package:food_waste_app/data/services/location_service.dart';
 import 'package:food_waste_app/screens/splash_screen.dart';
 import 'package:food_waste_app/screens/login_screen.dart';
 import 'package:food_waste_app/screens/register_screen.dart';
 import 'package:food_waste_app/screens/rescue_home_screen.dart';
 import 'package:food_waste_app/screens/seller_home_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Uygulama açılırken konumu almayı deniyoruz
-  try {
-    await LocationService.fetchAndSaveLocation();
-  } catch (e) {
-    debugPrint("Başlangıç konum hatası: $e");
-  }
 
   runApp(const FoodWasteApp());
+
+  Future.microtask(() async {
+    try {
+      await LocationService.fetchAndSaveLocation();
+    } catch (e) {
+      debugPrint("Başlangıç konum hatası: $e");
+    }
+  });
 }
 
 class FoodWasteApp extends StatelessWidget {
