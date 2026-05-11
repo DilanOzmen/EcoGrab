@@ -5,26 +5,20 @@ import 'package:food_waste_app/core/app_assets.dart';
 import 'package:food_waste_app/core/app_colors.dart';
 import 'package:food_waste_app/core/app_state.dart';
 import 'package:food_waste_app/data/services/api_client.dart';
-import 'package:food_waste_app/screens/notifications_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
-  final ApiClient apiClient;
+class SellerProfileScreen extends StatefulWidget {
   final VoidCallback onLogout;
-  final VoidCallback onOrdersTap;
 
-  const ProfileScreen({
-    super.key,
-    required this.apiClient,
-    required this.onLogout,
-    required this.onOrdersTap,
-  });
+  const SellerProfileScreen({super.key, required this.onLogout});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<SellerProfileScreen> createState() => _SellerProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
+class _SellerProfileScreenState extends State<SellerProfileScreen>
     with SingleTickerProviderStateMixin {
+  final ApiClient _apiClient = ApiClient();
+
   late Future<Map<String, dynamic>> _profileFuture;
 
   final _fullNameController = TextEditingController();
@@ -40,6 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
+
     _profileFuture = _loadProfile();
 
     _controller = AnimationController(
@@ -58,24 +53,89 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<Map<String, dynamic>> _loadProfile() async {
-    final data = await widget.apiClient.getMe();
+    final data = await _apiClient.getMe();
+
     _fullNameController.text = data['fullName']?.toString() ?? '';
     _phoneController.text = data['phone']?.toString() ?? '';
-    return data;
-  }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    _fullNameController.dispose();
-    _phoneController.dispose();
-    super.dispose();
+    return data;
   }
 
   Future<void> _refreshProfile() async {
     final future = _loadProfile();
     setState(() => _profileFuture = future);
     await future;
+  }
+
+  // 1. Şifre değiştirme mantığını yöneten metod
+  Future<void> _handleChangePassword(String oldP, String newP) async {
+    try {
+      await _apiClient.changePassword(oldPassword: oldP, newPassword: newP);
+      if (!mounted) return;
+      Navigator.pop(context); // Dialog'u kapat
+      _showMessage('Şifreniz başarıyla değiştirildi.');
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage(e.toString());
+    }
+  }
+
+  // 2. Şifre değiştirme pop-up'ını (Dialog) gösteren metod
+  void _showChangePasswordDialog() {
+    final oldController = TextEditingController();
+    final newController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'Şifre Değiştir',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: oldController,
+              obscureText: true,
+              decoration: _input('Mevcut Şifre', Icons.lock_open_rounded),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newController,
+              obscureText: true,
+              decoration: _input('Yeni Şifre', Icons.lock_outline_rounded),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Vazgeç', style: TextStyle(color: AppColors.textSoft)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (oldController.text.isEmpty || newController.text.isEmpty) {
+                _showMessage('Lütfen tüm alanları doldurun.');
+                return;
+              }
+              _handleChangePassword(oldController.text, newController.text);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Güncelle',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _saveProfile() async {
@@ -88,7 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     setState(() => _saving = true);
 
     try {
-      await widget.apiClient.updateMe(
+      await _apiClient.updateMe(
         fullName: _fullNameController.text.trim(),
         phone: _phoneController.text.trim(),
       );
@@ -100,12 +160,14 @@ class _ProfileScreenState extends State<ProfileScreen>
         _profileFuture = _loadProfile();
       });
 
-      _showMessage('Profil başarıyla güncellendi.');
+      _showMessage('Satıcı profili başarıyla güncellendi.');
     } catch (e) {
       if (!mounted) return;
       _showMessage(e.toString().replaceAll('ApiException: ', ''));
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
   }
 
@@ -115,31 +177,40 @@ class _ProfileScreenState extends State<ProfileScreen>
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  String _initials(String nameOrEmail) {
-    final value = nameOrEmail.trim();
-    if (value.isEmpty) return '?';
+  String _initials(String value) {
+    final text = value.trim();
 
-    final parts = value.split(' ').where((e) => e.isNotEmpty).toList();
+    if (text.isEmpty) return '?';
+
+    final parts = text.split(' ').where((item) => item.isNotEmpty).toList();
 
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
 
-    return value[0].toUpperCase();
+    return text[0].toUpperCase();
   }
 
   String _friendlyRole(String role) {
     final normalized = role.toLowerCase();
 
-    if (normalized == 'customer' || normalized == 'musteri') {
-      return 'Müşteri';
-    }
-
     if (normalized == 'seller' || normalized == 'satici') {
       return 'Satıcı';
     }
 
+    if (normalized == 'customer' || normalized == 'musteri') {
+      return 'Müşteri';
+    }
+
     return role;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _fullNameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
   }
 
   @override
@@ -148,8 +219,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       future: _profileFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColors.primaryGreen),
+          return const Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            ),
           );
         }
 
@@ -162,13 +236,13 @@ class _ProfileScreenState extends State<ProfileScreen>
         final fullName =
             data['fullName']?.toString() ??
             AppState.currentUser?.fullName ??
-            'Kullanıcı';
+            'Satıcı';
 
         final email =
             data['email']?.toString() ?? AppState.currentUser?.email ?? '-';
 
         final role =
-            data['role']?.toString() ?? AppState.currentUser?.role ?? '-';
+            data['role']?.toString() ?? AppState.currentUser?.role ?? 'seller';
 
         final phone = data['phone']?.toString() ?? '-';
 
@@ -191,35 +265,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                         children: [
                           _header(),
                           const SizedBox(height: 20),
-                          _profileHeroCard(fullName, email, role),
+                          _sellerHeroCard(fullName, email, role),
                           const SizedBox(height: 18),
                           _infoCard(email, phone, role),
                           const SizedBox(height: 18),
                           _editProfileCard(),
-                          const SizedBox(height: 18), // Boşluk ekledik
-                          _changePasswordCard(), // <-- MÜŞTERİ İÇİN ŞİFRE DEĞİŞTİRME KARTI BURADA
-                          const SizedBox(height: 18), // Boşluk ekledik
-                          _menuItem(
-                            icon: Icons.receipt_long_rounded,
-                            title: 'Sipariş ve Rezervasyonlarım',
-                            subtitle: 'Aktif ve geçmiş işlemlerini görüntüle',
-                            onTap: widget.onOrdersTap,
-                          ),
-                          _menuItem(
-                            icon: Icons.notifications_outlined,
-                            title: 'Bildirimlerim',
-                            subtitle: 'Rezervasyon ve sipariş güncellemeleri',
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => NotificationsScreen(
-                                    apiClient: widget.apiClient,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                          const SizedBox(height: 18),
+                          _changePasswordCard(), // <-- ŞİFRE DEĞİŞTİRME KARTI BURAYA EKLENDİ
+                          const SizedBox(height: 18),
+                          _sellerNoteCard(),
                           const SizedBox(height: 16),
                           _logoutButton(),
                         ],
@@ -238,6 +292,11 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _header() {
     return Row(
       children: [
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_rounded),
+          color: AppColors.primaryGreen,
+        ),
         Image.asset(
           AppAssets.ecograbLogo,
           width: 40,
@@ -247,9 +306,9 @@ class _ProfileScreenState extends State<ProfileScreen>
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            'Profilim',
+            'Satıcı Profilim',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
+              fontSize: 23,
               fontWeight: FontWeight.w900,
               color: AppColors.primaryGreen,
             ),
@@ -264,7 +323,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _profileHeroCard(String fullName, String email, String role) {
+  Widget _sellerHeroCard(String fullName, String email, String role) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
@@ -285,7 +344,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             right: -35,
             top: -45,
             child: Icon(
-              Icons.eco,
+              Icons.storefront_rounded,
               size: 150,
               color: Colors.white.withValues(alpha: 0.08),
             ),
@@ -362,81 +421,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // Şifre değiştirme penceresini açan fonksiyon
-  void _showChangePasswordDialog() {
-    final oldController = TextEditingController();
-    final newController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text(
-          'Şifre Değiştir',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: oldController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Mevcut Şifre',
-                prefixIcon: Icon(Icons.lock_open),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: newController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Yeni Şifre',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Vazgeç'),
-          ),
-          ElevatedButton(
-            onPressed: () =>
-                _handleChangePassword(oldController.text, newController.text),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-            ),
-            child: const Text(
-              'Güncelle',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // API isteğini atan fonksiyon
-  Future<void> _handleChangePassword(String oldP, String newP) async {
-    try {
-      final apiClient =
-          ApiClient(); // Dosyanın başında import edildiğinden emin ol
-      await apiClient.changePassword(oldPassword: oldP, newPassword: newP);
-      if (!mounted) return;
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Şifre başarıyla güncellendi.')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-  }
-
   Widget _infoCard(String email, String phone, String role) {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -495,7 +479,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Profil Bilgilerini Güncelle',
+                  'Satıcı Bilgilerini Güncelle',
                   style: GoogleFonts.plusJakartaSans(
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
@@ -521,7 +505,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             firstChild: Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'Ad soyad ve telefon bilgilerini buradan güncelleyebilirsin.',
+                'Satıcı hesabına ait ad soyad ve telefon bilgilerini buradan güncelleyebilirsin.',
                 style: GoogleFonts.manrope(
                   color: AppColors.textSoft,
                   fontSize: 12,
@@ -594,6 +578,78 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  Widget _changePasswordCard() {
+    return InkWell(
+      // Tıklanabilir olması için InkWell ekledik
+      onTap: _showChangePasswordDialog,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white, // Rengi garantilemek için direkt beyaz verdik
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Colors.grey.shade200,
+          ), // Kenarlık belirgin olsun
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.vpn_key_outlined, color: Colors.green),
+            ),
+            const SizedBox(width: 15),
+            const Expanded(
+              child: Text(
+                'Şifremi Değiştir',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sellerNoteCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: _cardDecoration(),
+      child: Row(
+        children: [
+          _miniIcon(Icons.eco_outlined),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Satıcı panelinde ürünlerini ekleyebilir, stoklarını takip edebilir ve gelen siparişleri yönetebilirsin.',
+              style: GoogleFonts.manrope(
+                color: AppColors.textSoft,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   InputDecoration _input(String hint, IconData icon) {
     return InputDecoration(
       hintText: hint,
@@ -607,43 +663,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
         borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.3),
-      ),
-    );
-  }
-
-  Widget _menuItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: _cardDecoration(),
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: _miniIcon(icon),
-        title: Text(
-          title,
-          style: GoogleFonts.manrope(
-            fontWeight: FontWeight.w900,
-            color: AppColors.textDark,
-            fontSize: 14,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: GoogleFonts.manrope(
-            fontSize: 12,
-            color: AppColors.textSoft,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        trailing: const Icon(
-          Icons.chevron_right_rounded,
-          color: AppColors.primaryGreen,
-        ),
       ),
     );
   }
@@ -729,47 +748,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _changePasswordCard() {
-    return Container(
-      margin: const EdgeInsets.only(top: 18), // Diğer kartlarla arayı açar
-      padding: const EdgeInsets.all(18),
-      decoration: _cardDecoration(), // Mevcut kart tasarımıyla aynı olur
-      child: Row(
-        children: [
-          _miniIcon(Icons.lock_reset_rounded), // Kilit ikonu
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Şifre İşlemleri',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                Text(
-                  'Güvenliğin için şifreni buradan güncelleyebilirsin.',
-                  style: GoogleFonts.manrope(
-                    color: AppColors.textSoft,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: _showChangePasswordDialog, // Pop-up'ı açar
-            child: const Text('Değiştir'),
-          ),
-        ],
       ),
     );
   }

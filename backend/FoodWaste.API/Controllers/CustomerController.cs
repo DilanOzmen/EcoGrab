@@ -3,16 +3,18 @@ using FoodWaste.API.Common;
 using FoodWaste.API.Contracts.Customer;
 using FoodWaste.Business.Abstractions;
 using FoodWaste.Business.Models.Customer;
+using FoodWaste.Data;
 using FoodWaste.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FoodWaste.API.Controllers;
 
 [ApiController]
 [Authorize(Roles = IdentityRoles.Customer)]
 [Route("api/customer")]
-public class CustomerController(ICustomerService customerService) : ControllerBase
+public class CustomerController(ICustomerService customerService, FoodWasteDbContext dbContext) : ControllerBase
 {
     [AllowAnonymous]
     [HttpGet("restaurants")]
@@ -44,6 +46,42 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
     {
         var filter = new CustomerProductFilterModel(search, category, homeCategory, minPrice, maxPrice, minDiscountPercent, latitude, longitude, radiusKm);
         var products = await customerService.GetProductsAsync(filter, cancellationToken);
+        return Ok(products);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("products/filter")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetFilteredProducts([FromQuery] string? category, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            return BadRequest(new ApiErrorResponse("Kategori parametresi bos olamaz."));
+        }
+
+        var now = DateTime.UtcNow;
+        var products = await dbContext.Products
+            .AsNoTracking()
+            .Where(p => p.Category == category && p.IsActive && p.ExpiryDate > now && !p.IsDeleted && p.Stock > 0 && p.DiscountedPrice < p.OriginalPrice)
+            .OrderBy(p => p.ExpiryDate)
+            .Select(p => new
+            {
+                p.Id,
+                p.RestaurantId,
+                Restaurant = p.Restaurant!.Name,
+                p.Category,
+                p.Name,
+                p.Description,
+                p.OriginalPrice,
+                p.DiscountedPrice,
+                DiscountPercent = p.OriginalPrice <= 0 ? 0 : Math.Round((p.OriginalPrice - p.DiscountedPrice) * 100 / p.OriginalPrice, 2),
+                p.Stock,
+                p.ExpiryDate,
+                PrimaryImage = p.Images.Where(i => !i.IsDeleted).OrderByDescending(i => i.IsPrimary).Select(i => i.ImageUrl).FirstOrDefault()
+            })
+            .ToListAsync(cancellationToken);
+
         return Ok(products);
     }
 

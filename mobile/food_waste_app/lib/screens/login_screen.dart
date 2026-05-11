@@ -48,33 +48,19 @@ class _LoginScreenState extends State<LoginScreen>
       duration: const Duration(milliseconds: 1300),
     )..repeat(reverse: true);
 
-    _fade = CurvedAnimation(
-      parent: _introController,
-      curve: Curves.easeOut,
-    );
+    _fade = CurvedAnimation(parent: _introController, curve: Curves.easeOut);
 
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _introController,
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    _slide = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _introController, curve: Curves.easeOutCubic),
+        );
 
     _sparkleOpacity = Tween<double>(begin: 0.25, end: 0.75).animate(
-      CurvedAnimation(
-        parent: _sparkleController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _sparkleController, curve: Curves.easeInOut),
     );
 
     _sparkleScale = Tween<double>(begin: 0.92, end: 1.08).animate(
-      CurvedAnimation(
-        parent: _sparkleController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _sparkleController, curve: Curves.easeInOut),
     );
 
     _introController.forward();
@@ -123,9 +109,9 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   InputDecoration _inputDecoration({
@@ -135,10 +121,7 @@ class _LoginScreenState extends State<LoginScreen>
   }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.manrope(
-        color: AppColors.textSoft,
-        fontSize: 13,
-      ),
+      hintStyle: GoogleFonts.manrope(color: AppColors.textSoft, fontSize: 13),
       prefixIcon: Icon(icon, color: AppColors.textSoft, size: 20),
       suffixIcon: suffixIcon,
       filled: true,
@@ -149,10 +132,7 @@ class _LoginScreenState extends State<LoginScreen>
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
-        borderSide: const BorderSide(
-          color: AppColors.primaryGreen,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.4),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
@@ -323,6 +303,7 @@ class _LoginScreenState extends State<LoginScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // --- E-POSTA ALANI ---
         _label('E-posta'),
         const SizedBox(height: 8),
         TextFormField(
@@ -343,6 +324,8 @@ class _LoginScreenState extends State<LoginScreen>
           },
         ),
         const SizedBox(height: 16),
+
+        // --- ŞİFRE ALANI ---
         _label('Şifre'),
         const SizedBox(height: 8),
         TextFormField(
@@ -369,6 +352,31 @@ class _LoginScreenState extends State<LoginScreen>
             }
             return null;
           },
+        ),
+
+        // --- ŞİFREMİ UNUTTUM BUTONU (Tam şifrenin altında) ---
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: () {
+              _showMessage(
+                'Şifre sıfırlama bağlantısı e-postanıza gönderilecek.',
+              );
+            },
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(0, 30),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              'Şifremi Unuttum',
+              style: GoogleFonts.plusJakartaSans(
+                color: AppColors.primaryGreen,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -428,10 +436,7 @@ class _LoginScreenState extends State<LoginScreen>
       },
       child: RichText(
         text: TextSpan(
-          style: GoogleFonts.manrope(
-            color: AppColors.textSoft,
-            fontSize: 12,
-          ),
+          style: GoogleFonts.manrope(color: AppColors.textSoft, fontSize: 12),
           children: const [
             TextSpan(text: 'Hesabınız yok mu? '),
             TextSpan(

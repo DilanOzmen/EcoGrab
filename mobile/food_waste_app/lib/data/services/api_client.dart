@@ -32,6 +32,26 @@ class ApiClient {
     };
   }
 
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/auth/change-password'),
+      headers: _authHeaders(),
+      body: jsonEncode({
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+      }),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw ApiException(
+        _extractErrorMessage(response.body, 'Sifre degistirme basarisiz.'),
+      );
+    }
+  }
+
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   Future<AuthResponse> login(String email, String password) async {
@@ -100,6 +120,22 @@ class ApiClient {
         if (longitude != null) 'longitude': longitude.toString(),
         if (radiusKm != null) 'radiusKm': radiusKm.toString(),
       },
+    );
+
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      throw ApiException('Urunler yuklenemedi.');
+    }
+
+    final list = jsonDecode(response.body) as List<dynamic>;
+    return list
+        .map((e) => Product.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<Product>> getFilteredProducts(String category) async {
+    final uri = Uri.parse('$baseUrl/api/customer/products/filter').replace(
+      queryParameters: {'category': category},
     );
 
     final response = await http.get(uri);
