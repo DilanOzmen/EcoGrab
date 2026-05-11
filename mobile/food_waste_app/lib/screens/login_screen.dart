@@ -285,16 +285,6 @@ class _LoginScreenState extends State<LoginScreen>
             color: AppColors.textDark,
           ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          'Akıllı alışveriş yapın, israfı azaltın.',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.manrope(
-            fontSize: 13,
-            color: AppColors.textSoft,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ],
     );
   }
