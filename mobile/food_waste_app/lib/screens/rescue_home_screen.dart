@@ -79,10 +79,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
 
     final Future<List<Product>> productsFuture;
     if (selectedFilter == _HomeCategoryFilter.all) {
-      productsFuture = _apiClient.getProducts(
-        latitude: AppState.latitude,
-        longitude: AppState.longitude,
-      );
+      productsFuture = _apiClient.getProducts();
     } else {
       productsFuture = _apiClient.getFilteredProducts(selectedFilter.apiValue);
     }
@@ -353,11 +350,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
                             message: 'Henüz ürün eklenmemiş.',
                           )
                         else
-                          ...data.products
-                              .take(8)
-                              .map(
-                                (product) => _buildSimpleProductCard(product),
-                              ),
+                          ...data.products.map(
+                            (product) => _buildSimpleProductCard(product),
+                          ),
                       ],
                     ),
                   ),
@@ -1303,10 +1298,10 @@ extension on _HomeCategoryFilter {
   // Doğrudan veritabanındaki Category değerleriyle eşleşiyor
   String get apiValue => switch (this) {
     _HomeCategoryFilter.all => '',
-    _HomeCategoryFilter.tatlilar => 'Tatlilar',
+    _HomeCategoryFilter.tatlilar => 'Tatlı',
     _HomeCategoryFilter.unluMamuller => 'Unlu Mamuller',
     _HomeCategoryFilter.yemekler => 'Yemekler',
-    _HomeCategoryFilter.icecekler => 'Içecekler',
+    _HomeCategoryFilter.icecekler => 'İçecek',
     _HomeCategoryFilter.meze => 'Meze',
     _HomeCategoryFilter.salata => 'Salata',
   };
