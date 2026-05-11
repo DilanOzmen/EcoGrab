@@ -103,10 +103,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
 
     final Future<List<Product>> productsFuture;
     if (selectedFilter == _HomeCategoryFilter.all) {
-      productsFuture = _apiClient.getProducts(
-        latitude: AppState.latitude,
-        longitude: AppState.longitude,
-      );
+      productsFuture = _apiClient.getProducts();
     } else {
       productsFuture = _apiClient.getFilteredProducts(selectedFilter.apiValue);
     }
