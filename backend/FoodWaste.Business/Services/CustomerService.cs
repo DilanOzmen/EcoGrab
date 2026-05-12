@@ -527,22 +527,25 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
     {
         return NormalizeHomeCategory(homeCategory) switch
         {
-            // Flutter'dan gelen İngilizce değerler → Konsolidate edilmiş kategoriler
+            // Flutter'dan gelen İngilizce değerler → Gerçek DB kategori isimleri
+            "meal"       => ["Ana Yemek", "Köfte", "Kebap", "Pide", "Balık", "Pizza", "Burger", "Dürüm"],
+            "desserts"   => ["Tatlı"],
+            "sweets"     => ["Tatlı"],
+            "drinks"     => ["İçecek"],
+            "beverages"  => ["İçecek"],
+            "meze"       => ["Meze"],
             "vegetables" => ["Meze", "Salata"],
             "bakery"     => ["Unlu Mamuller"],
-            "dairy"      => ["Süt Ürünleri", "Sut Urunleri", "Peynir", "Kahvaltı", "Kahvalti"],
-            "fruit"      => ["Meyve", "Atıştırmalık", "Atistirmalik"],
-            "meal"       => ["Yemekler"],
-            // Yeni konsolidate kategoriler (henüz Flutter UI'da buton yok)
-            "drinks"     => ["İçecekler"],
-            "beverages"  => ["İçecekler"],
-            "desserts"   => ["Tatlılar"],
-            "sweets"     => ["Tatlılar"],
+            "breakfast"  => ["Kahvaltı"],
+            "snack"      => ["Atıştırmalık"],
+            "salata"     => ["Salata"],
+            "dairy"      => ["Süt Ürünleri", "Peynir", "Kahvaltı"],
+            "fruit"      => ["Meyve", "Atıştırmalık"],
             // Eski Türkçe değerler (geriye dönük uyumluluk)
-            "market"     => ["Kahvaltı", "Kahvalti", "Peynir", "Süt Ürünleri", "Sut Urunleri"],
-            "kafe"       => ["İçecekler", "Atıştırmalık", "Atistirmalik"],
+            "market"     => ["Kahvaltı", "Peynir", "Süt Ürünleri"],
+            "kafe"       => ["İçecek", "Atıştırmalık"],
             "firin"      => ["Unlu Mamuller"],
-            "icecek"     => ["İçecekler"],
+            "icecek"     => ["İçecek"],
             _ => []
         };
     }

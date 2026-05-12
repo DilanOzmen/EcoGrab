@@ -25,6 +25,17 @@ class AuthResponse {
       refreshToken: json['refreshToken'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'fullName': fullName,
+      'email': email,
+      'role': role,
+      'token': token,
+      'refreshToken': refreshToken,
+    };
+  }
 }
 
 

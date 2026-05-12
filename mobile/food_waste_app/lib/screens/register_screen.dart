@@ -83,7 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         role: isCustomer ? 'Customer' : 'Seller',
       );
 
-      AppState.setUser(auth);
+      await AppState.setUser(auth);
 
       if (!mounted) return;
 
@@ -94,7 +94,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       } else if (role == 'seller' || role == 'satici') {
         Navigator.pushReplacementNamed(context, '/seller-home');
       } else {
-        AppState.clear();
+        await AppState.clear();
         _showMessage('Desteklenmeyen rol: ${auth.role}');
       }
     } catch (e) {

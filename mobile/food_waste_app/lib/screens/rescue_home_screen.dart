@@ -105,7 +105,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     if (selectedFilter == _HomeCategoryFilter.all) {
       productsFuture = _apiClient.getProducts();
     } else {
-      productsFuture = _apiClient.getFilteredProducts(selectedFilter.apiValue);
+      productsFuture = _apiClient.getProducts(homeCategory: selectedFilter.apiValue);
     }
 
     final results = await Future.wait([
@@ -159,7 +159,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
   }
 
   Future<void> _logout() async {
-    AppState.clear();
+    await AppState.clear();
 
     if (!mounted) return;
 
@@ -203,6 +203,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
 
     if (changed == true && mounted) {
       _refreshHome();
+      setState(() {
+        _ordersFuture = _loadOrdersData();
+      });
     }
   }
 
@@ -1490,11 +1493,11 @@ extension on _HomeCategoryFilter {
 
   String get apiValue => switch (this) {
         _HomeCategoryFilter.all => '',
-        _HomeCategoryFilter.tatlilar => 'Tatlilar',
-        _HomeCategoryFilter.unluMamuller => 'Unlu Mamuller',
-        _HomeCategoryFilter.yemekler => 'Yemekler',
-        _HomeCategoryFilter.icecekler => 'Içecekler',
-        _HomeCategoryFilter.meze => 'Meze',
-        _HomeCategoryFilter.salata => 'Salata',
+        _HomeCategoryFilter.tatlilar => 'desserts',
+        _HomeCategoryFilter.unluMamuller => 'bakery',
+        _HomeCategoryFilter.yemekler => 'meal',
+        _HomeCategoryFilter.icecekler => 'drinks',
+        _HomeCategoryFilter.meze => 'meze',
+        _HomeCategoryFilter.salata => 'salata',
       };
 }

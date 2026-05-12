@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen>
         _passwordController.text.trim(),
       );
 
-      AppState.setUser(auth);
+      await AppState.setUser(auth);
 
       if (!mounted) return;
 
@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen>
       } else if (role == 'seller' || role == 'satici') {
         Navigator.pushReplacementNamed(context, '/seller-home');
       } else {
-        AppState.clear();
+        await AppState.clear();
         _showMessage('Desteklenmeyen rol: ${auth.role}');
       }
     } catch (e) {

@@ -92,8 +92,8 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
   );
 }
 
-  void _logout() {
-    AppState.clear();
+  Future<void> _logout() async {
+    await AppState.clear();
 
     Navigator.pushAndRemoveUntil(
       context,

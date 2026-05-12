@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:food_waste_app/core/app_state.dart';
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -63,17 +65,24 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startAnimation() async {
-  await _introController.forward();
+    await _introController.forward();
+    await AppState.loadUser();
 
-  // Splash ekranda daha uzun beklesin
-  await Future.delayed(const Duration(milliseconds: 2600));
+    await Future.delayed(const Duration(milliseconds: 2600));
 
-  if (!mounted) return;
-  await _exitController.forward();
+    if (!mounted) return;
+    await _exitController.forward();
 
-  if (!mounted) return;
-  Navigator.pushReplacementNamed(context, '/login');
-}
+    if (!mounted) return;
+
+    final nextRoute = switch (AppState.role.toLowerCase()) {
+      'customer' || 'musteri' => '/customer-home',
+      'seller' || 'satici' => '/seller-home',
+      _ => '/login',
+    };
+
+    Navigator.pushReplacementNamed(context, nextRoute);
+  }
 
   @override
   void dispose() {
