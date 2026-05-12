@@ -534,7 +534,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 650),
           curve: Curves.easeInOutCubic,
-          width: _isChatBotOpen ? 118 : 54,
+          width: _isChatBotOpen ? 124 : 54,
           height: 64,
           decoration: BoxDecoration(
             color: AppColors.primaryGreen,
@@ -568,9 +568,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
                   ),
                 ),
               Container(
-                width: 54,
-                height: 54,
-                margin: const EdgeInsets.only(right: 3),
+                width: 52,
+                height: 52,
+                margin: const EdgeInsets.only(right: 1),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
