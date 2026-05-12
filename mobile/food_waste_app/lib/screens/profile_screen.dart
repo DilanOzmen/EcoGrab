@@ -74,7 +74,11 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _refreshProfile() async {
     final future = _loadProfile();
-    setState(() => _profileFuture = future);
+    if (mounted) {
+      setState(() {
+        _profileFuture = future;
+      });
+    }
     await future;
   }
 

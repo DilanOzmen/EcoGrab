@@ -1,4 +1,6 @@
 class Product {
+  static const String _imageVersion = '20260512';
+
   final int id;
   final int restaurantId;
   final String restaurantName;
@@ -28,11 +30,24 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
+    final rawImageUrl = (json['imageUrl'] ??
+        json['primaryImageUrl'] ??
+        json['primaryImage'])
+      ?.toString()
+      .trim();
+
+    final normalizedImageUrl =
+      (rawImageUrl == null || rawImageUrl.isEmpty)
+      ? null
+      : rawImageUrl.contains('?')
+          ? '$rawImageUrl&v=$_imageVersion'
+          : '$rawImageUrl?v=$_imageVersion';
+
     return Product(
       id: json['id'] ?? 0,
       restaurantId: json['restaurantId'] ?? 0,
       restaurantName: json['restaurantName'] ?? '',
-      imageUrl: (json['imageUrl'] ?? json['primaryImage'])?.toString(),
+      imageUrl: normalizedImageUrl,
       category: json['category'] ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '',
