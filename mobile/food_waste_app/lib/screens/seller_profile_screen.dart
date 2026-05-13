@@ -63,7 +63,9 @@ class _SellerProfileScreenState extends State<SellerProfileScreen>
 
   Future<void> _refreshProfile() async {
     final future = _loadProfile();
-    setState(() => _profileFuture = future);
+    setState(() {
+      _profileFuture = future;
+    });
     await future;
   }
 

@@ -1,4 +1,6 @@
 class SellerProduct {
+  static const String _imageVersion = '20260513';
+
   final int id;
   final int restaurantId;
   final String restaurantName;
@@ -10,6 +12,7 @@ class SellerProduct {
   final int stock;
   final DateTime expiryDate;
   final bool isActive;
+  final String? primaryImageUrl;
 
   const SellerProduct({
     required this.id,
@@ -23,7 +26,19 @@ class SellerProduct {
     required this.stock,
     required this.expiryDate,
     required this.isActive,
+    this.primaryImageUrl,
   });
+
+  String? get imageUrl {
+    final value = primaryImageUrl?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+
+    return value.contains('?')
+        ? '$value&v=$_imageVersion'
+        : '$value?v=$_imageVersion';
+  }
 
   factory SellerProduct.fromJson(Map<String, dynamic> json) {
     return SellerProduct(
@@ -40,9 +55,8 @@ class SellerProduct {
           DateTime.tryParse(json['expiryDate']?.toString() ?? '') ??
           DateTime.now(),
       isActive: json['isActive'] == true,
+      primaryImageUrl: (json['primaryImageUrl'] ?? json['imageUrl'])
+          ?.toString(),
     );
   }
 }
-
-
-

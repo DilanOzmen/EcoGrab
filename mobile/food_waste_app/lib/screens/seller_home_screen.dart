@@ -42,9 +42,7 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
     _slide = Tween<Offset>(
       begin: const Offset(0, 0.06),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
   }
@@ -57,7 +55,9 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
 
   Future<void> _refreshProducts() async {
     final future = _apiClient.getMySellerProducts();
-    setState(() => _productsFuture = future);
+    setState(() {
+      _productsFuture = future;
+    });
     await future;
   }
 
@@ -75,22 +75,16 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
   void _openOrderApprovalScreen() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const SellerOrderApprovalScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const SellerOrderApprovalScreen()),
     );
   }
 
   void _openSellerProfile() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => SellerProfileScreen(
-        onLogout: _logout,
-      ),
-    ),
-  );
-}
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => SellerProfileScreen(onLogout: _logout)),
+    );
+  }
 
   Future<void> _logout() async {
     await AppState.clear();
@@ -164,52 +158,52 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
     );
   }
 
- Widget _buildTopBar() {
-  return Row(
-    children: [
-      Image.asset(
-        AppAssets.ecograbLogo,
-        width: 42,
-        height: 42,
-        fit: BoxFit.contain,
-      ),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Satıcı Paneli',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: AppColors.primaryGreen,
-              ),
-            ),
-            Text(
-              'Ürünlerini yönet, israfı azalt.',
-              style: GoogleFonts.manrope(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSoft,
-              ),
-            ),
-          ],
+  Widget _buildTopBar() {
+    return Row(
+      children: [
+        Image.asset(
+          AppAssets.ecograbLogo,
+          width: 42,
+          height: 42,
+          fit: BoxFit.contain,
         ),
-      ),
-      IconButton(
-        onPressed: _openSellerProfile,
-        icon: const Icon(Icons.person_outline_rounded),
-        color: AppColors.primaryGreen,
-      ),
-      IconButton(
-        onPressed: _logout,
-        icon: const Icon(Icons.logout_rounded),
-        color: AppColors.error,
-      ),
-    ],
-  );
-}
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Satıcı Paneli',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+              Text(
+                'Ürünlerini yönet, israfı azalt.',
+                style: GoogleFonts.manrope(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSoft,
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          onPressed: _openSellerProfile,
+          icon: const Icon(Icons.person_outline_rounded),
+          color: AppColors.primaryGreen,
+        ),
+        IconButton(
+          onPressed: _logout,
+          icon: const Icon(Icons.logout_rounded),
+          color: AppColors.error,
+        ),
+      ],
+    );
+  }
 
   Widget _buildHeroCard(List<SellerProduct> products) {
     final totalStock = products.fold<int>(0, (sum, item) => sum + item.stock);
@@ -457,7 +451,6 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
   Widget _buildProductCard(SellerProduct product) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(24),
@@ -470,56 +463,218 @@ class _SellerHomeScreenState extends State<SellerHomeScreen>
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 62,
-            height: 62,
-            decoration: BoxDecoration(
-              color: AppColors.freshGreen.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(19),
-            ),
-            child: const Icon(
-              Icons.restaurant_menu_rounded,
-              color: AppColors.primaryGreen,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => _openProductDetails(product),
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Row(
               children: [
+                _productThumbnail(product),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      _smallBadge(
+                        Icons.inventory_2_outlined,
+                        'Stok: ${product.stock}',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Text(
-                  product.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  '₺${product.discountedPrice}',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openProductDetails(SellerProduct product) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 10,
+                    child: _productDetailImage(product),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  product.name,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 20,
                     fontWeight: FontWeight.w900,
                     color: AppColors.textDark,
                   ),
                 ),
                 const SizedBox(height: 6),
-                _smallBadge(
-                  Icons.inventory_2_outlined,
-                  'Stok: ${product.stock}',
+                Text(
+                  product.restaurantName,
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSoft,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _smallBadge(
+                      Icons.sell_rounded,
+                      '₺${product.discountedPrice}',
+                    ),
+                    _smallBadge(
+                      Icons.inventory_2_outlined,
+                      'Stok: ${product.stock}',
+                    ),
+                    _smallBadge(
+                      product.isActive
+                          ? Icons.check_circle_rounded
+                          : Icons.pause_circle_rounded,
+                      product.isActive ? 'Aktif' : 'Pasif',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  product.description,
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    height: 1.45,
+                    color: AppColors.textSoft,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Kapat'),
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 10),
-          Text(
-            '₺${product.discountedPrice}',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
+        );
+      },
+    );
+  }
+
+  Widget _productThumbnail(SellerProduct product) {
+    final url = _absoluteImageUrl(product.imageUrl);
+
+    return Container(
+      width: 62,
+      height: 62,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.freshGreen.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(19),
+      ),
+      child: url == null
+          ? const Icon(
+              Icons.restaurant_menu_rounded,
               color: AppColors.primaryGreen,
+              size: 28,
+            )
+          : Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.restaurant_menu_rounded,
+                color: AppColors.primaryGreen,
+                size: 28,
+              ),
             ),
+    );
+  }
+
+  Widget _productDetailImage(SellerProduct product) {
+    final url = _absoluteImageUrl(product.imageUrl);
+
+    if (url == null) {
+      return Container(
+        color: AppColors.freshGreen.withValues(alpha: 0.12),
+        child: const Center(
+          child: Icon(
+            Icons.restaurant_menu_rounded,
+            color: AppColors.primaryGreen,
+            size: 56,
           ),
-        ],
+        ),
+      );
+    }
+
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        color: AppColors.freshGreen.withValues(alpha: 0.12),
+        child: const Center(
+          child: Icon(
+            Icons.restaurant_menu_rounded,
+            color: AppColors.primaryGreen,
+            size: 56,
+          ),
+        ),
       ),
     );
+  }
+
+  String? _absoluteImageUrl(String? imageUrl) {
+    final value = imageUrl?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    if (value.startsWith('/')) {
+      return '${ApiClient.baseUrl}$value';
+    }
+
+    return '${ApiClient.baseUrl}/$value';
   }
 
   Widget _smallBadge(IconData icon, String text) {
