@@ -8,6 +8,30 @@ namespace FoodWaste.Business.Services;
 
 public class SellerService(FoodWasteDbContext dbContext) : ISellerService
 {
+    private static readonly IReadOnlyDictionary<string, string> CategoryMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Vegetables"] = "Salata",
+        ["Bakery"] = "Unlu Mamuller",
+        ["Dairy"] = "Süt Ürünleri",
+        ["Fruit"] = "Meyve",
+        ["Meal"] = "Ana Yemek",
+        ["Desserts"] = "Tatlı",
+        ["Drinks"] = "İçecek",
+        ["Breakfast"] = "Kahvaltı",
+        ["Snack"] = "Atıştırmalık",
+        ["Meze"] = "Meze",
+        ["Salata"] = "Salata",
+        ["Unlu"] = "Unlu Mamuller",
+        ["Firin"] = "Unlu Mamuller",
+        ["Firincilik"] = "Unlu Mamuller",
+        ["Tatli"] = "Tatlı",
+        ["Tatlilar"] = "Tatlı",
+        ["Icecek"] = "İçecek",
+        ["Kahvalti"] = "Kahvaltı",
+        ["Atistirmalik"] = "Atıştırmalık",
+        ["Sut Urunleri"] = "Süt Ürünleri"
+    };
+
     public async Task<IReadOnlyList<SellerProductDto>> GetMyProductsAsync(int sellerUserId, CancellationToken cancellationToken = default)
     {
         return await dbContext.Products
@@ -47,7 +71,7 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
         var product = new Product
         {
             RestaurantId = model.RestaurantId,
-            Category = model.Category.Trim(),
+            Category = NormalizeCategory(model.Category),
             Name = model.Name.Trim(),
             Description = model.Description.Trim(),
             OriginalPrice = model.OriginalPrice,
@@ -102,7 +126,7 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
             }
         }
 
-        product.Category = model.Category.Trim();
+        product.Category = NormalizeCategory(model.Category);
         product.Name = model.Name.Trim();
         product.Description = model.Description.Trim();
         product.OriginalPrice = model.OriginalPrice;
@@ -163,6 +187,12 @@ public class SellerService(FoodWasteDbContext dbContext) : ISellerService
         product.IsActive = false;
         await dbContext.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    private static string NormalizeCategory(string category)
+    {
+        var value = category.Trim();
+        return CategoryMap.TryGetValue(value, out var normalized) ? normalized : value;
     }
 
     public async Task<IReadOnlyList<SellerActiveOrderDto>> GetOrdersAsync(int sellerUserId, bool onlyActive, CancellationToken cancellationToken = default)

@@ -85,6 +85,7 @@ public class FoodWasteDbContext(DbContextOptions<FoodWasteDbContext> options) : 
 		modelBuilder.Entity<Order>(entity =>
 		{
 			entity.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
+			entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
 			entity.Property(x => x.UpdatedAt).HasColumnType("datetime2");
 			entity.Property(x => x.DeletedAt).HasColumnType("datetime2");
 			entity.Property(x => x.IsDeleted).HasDefaultValue(false);

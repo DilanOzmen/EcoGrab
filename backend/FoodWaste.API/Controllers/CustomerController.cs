@@ -16,6 +16,8 @@ namespace FoodWaste.API.Controllers;
 [Route("api/customer")]
 public class CustomerController(ICustomerService customerService, FoodWasteDbContext dbContext) : ControllerBase
 {
+    private const string DefaultProductImagePath = "/images/nevmekan-sicak-cikolata.jpg";
+
     [AllowAnonymous]
     [HttpGet("restaurants")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -78,7 +80,7 @@ public class CustomerController(ICustomerService customerService, FoodWasteDbCon
                 DiscountPercent = p.OriginalPrice <= 0 ? 0 : Math.Round((p.OriginalPrice - p.DiscountedPrice) * 100 / p.OriginalPrice, 2),
                 p.Stock,
                 p.ExpiryDate,
-                PrimaryImage = p.Images.Where(i => !i.IsDeleted).OrderByDescending(i => i.IsPrimary).Select(i => i.ImageUrl).FirstOrDefault()
+                PrimaryImage = p.Images.Where(i => !i.IsDeleted).OrderByDescending(i => i.IsPrimary).Select(i => i.ImageUrl).FirstOrDefault() ?? DefaultProductImagePath
             })
             .ToListAsync(cancellationToken);
 

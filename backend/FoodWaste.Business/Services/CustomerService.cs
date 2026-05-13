@@ -8,6 +8,8 @@ namespace FoodWaste.Business.Services;
 
 public class CustomerService(FoodWasteDbContext dbContext, INotificationService notificationService) : ICustomerService
 {
+    private const string DefaultProductImagePath = "/images/nevmekan-sicak-cikolata.jpg";
+
     public async Task<IReadOnlyList<NearbyRestaurantDto>> GetRestaurantsAsync(string? city, string? search, string? homeCategory, CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
@@ -29,6 +31,7 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
         }
 
         var homeCategoryProductCategories = GetHomeCategoryProductCategories(homeCategory);
+        var normalizedHomeCategory = NormalizeHomeCategory(homeCategory);
         if (homeCategoryProductCategories.Count > 0)
         {
             query = query.Where(x => x.Products.Any(p => !p.IsDeleted
@@ -36,7 +39,15 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
                 && p.Stock > 0
                 && p.ExpiryDate > now
                 && p.DiscountedPrice < p.OriginalPrice
-                && homeCategoryProductCategories.Contains(p.Category)));
+                && (homeCategoryProductCategories.Contains(p.Category)
+                    || (normalizedHomeCategory == "bakery" || normalizedHomeCategory == "firin")
+                        && (p.Name.Contains("Ekmek")
+                            || p.Name.Contains("Poğaça")
+                            || p.Name.Contains("Pogaca")
+                            || p.Name.Contains("Börek")
+                            || p.Name.Contains("Borek")
+                            || p.Name.Contains("Çörek")
+                            || p.Name.Contains("Corek")))));
         }
 
         return await query
@@ -78,9 +89,18 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
         }
 
         var homeCategoryProductCategories = GetHomeCategoryProductCategories(filter.HomeCategory);
+        var normalizedHomeCategory = NormalizeHomeCategory(filter.HomeCategory);
         if (homeCategoryProductCategories.Count > 0)
         {
-            query = query.Where(x => homeCategoryProductCategories.Contains(x.Category));
+            query = query.Where(x => homeCategoryProductCategories.Contains(x.Category)
+                                     || (normalizedHomeCategory == "bakery" || normalizedHomeCategory == "firin")
+                                        && (x.Name.Contains("Ekmek")
+                                            || x.Name.Contains("Poğaça")
+                                            || x.Name.Contains("Pogaca")
+                                            || x.Name.Contains("Börek")
+                                            || x.Name.Contains("Borek")
+                                            || x.Name.Contains("Çörek")
+                                            || x.Name.Contains("Corek")));
         }
 
         if (filter.MinPrice.HasValue)
@@ -129,7 +149,7 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
                         .OrderByDescending(i => i.IsPrimary)
                         .ThenBy(i => i.Id)
                         .Select(i => i.ImageUrl)
-                        .FirstOrDefault());
+                        .FirstOrDefault() ?? DefaultProductImagePath);
             });
 
         if (filter.MinDiscountPercent.HasValue)
@@ -181,7 +201,7 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
                     .OrderByDescending(i => i.IsPrimary)
                     .ThenBy(i => i.Id)
                     .Select(i => i.ImageUrl)
-                    .FirstOrDefault()))
+                    .FirstOrDefault() ?? DefaultProductImagePath))
             .ToListAsync(cancellationToken);
     }
 
@@ -268,8 +288,6 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
             return null;
         }
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-
         var product = await dbContext.Products
             .Include(x => x.Restaurant)
             .FirstOrDefaultAsync(x => x.Id == productId && !x.IsDeleted && x.Restaurant != null && !x.Restaurant.IsDeleted, cancellationToken);
@@ -304,7 +322,6 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
 
         dbContext.Orders.Add(order);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
 
         await CreateReservationNotificationsAsync(userId, product.Restaurant?.OwnerUserId, order.Id, cancellationToken);
 
@@ -322,8 +339,6 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
         {
             return null;
         }
-
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         var product = await dbContext.Products
             .Include(x => x.Restaurant)
@@ -359,7 +374,6 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
 
         dbContext.Orders.Add(order);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
 
         await notificationService.CreateAsync(userId, "OrderCreated", "Siparis olusturuldu", $"#{order.Id} nolu siparisiniz olusturuldu.", cancellationToken);
         if (product.Restaurant?.OwnerUserId is int sellerUserId)
@@ -372,8 +386,6 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
 
     public async Task<CustomerOrderDto?> CancelReservationAsync(int userId, int orderId, CancellationToken cancellationToken = default)
     {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-
         var order = await dbContext.Orders
             .Include(x => x.Items)
                 .ThenInclude(i => i.Product)
@@ -403,7 +415,6 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
 
         await notificationService.CreateAsync(userId, "OrderCancelled", "Siparis iptal edildi", $"#{order.Id} nolu siparisiniz iptal edildi.", cancellationToken);
 
@@ -528,24 +539,24 @@ public class CustomerService(FoodWasteDbContext dbContext, INotificationService 
         return NormalizeHomeCategory(homeCategory) switch
         {
             // Flutter'dan gelen İngilizce değerler → Gerçek DB kategori isimleri
-            "meal"       => ["Ana Yemek", "Köfte", "Kebap", "Pide", "Balık", "Pizza", "Burger", "Dürüm"],
-            "desserts"   => ["Tatlı"],
-            "sweets"     => ["Tatlı"],
-            "drinks"     => ["İçecek"],
-            "beverages"  => ["İçecek"],
+            "meal"       => ["Ana Yemek", "Ana Yemekler", "Ev Yemegi", "Ev Yemekleri", "Yemek", "Yemekler", "Meal", "Köfte", "Kofte", "Kebap", "Pide", "Balık", "Balik", "Pizza", "Burger", "Dürüm", "Durum", "Izgara", "Fast Food"],
+            "desserts"   => ["Tatlı", "Tatli", "Tatlılar", "Tatlilar", "Desserts", "Pasta", "Brownie", "Kurabiye", "Sutlu Tatli", "Sütlü Tatlı"],
+            "sweets"     => ["Tatlı", "Tatli", "Tatlılar", "Tatlilar", "Desserts", "Pasta", "Brownie", "Kurabiye", "Sutlu Tatli", "Sütlü Tatlı"],
+            "drinks"     => ["İçecek", "Icecek", "İçecekler", "Icecekler", "Drinks"],
+            "beverages"  => ["İçecek", "Icecek", "İçecekler", "Icecekler", "Drinks"],
             "meze"       => ["Meze"],
-            "vegetables" => ["Meze", "Salata"],
-            "bakery"     => ["Unlu Mamuller"],
-            "breakfast"  => ["Kahvaltı"],
-            "snack"      => ["Atıştırmalık"],
+            "vegetables" => ["Meze", "Salata", "Vegetables"],
+            "bakery"     => ["Unlu Mamuller", "Unlu", "Firin", "Firincilik", "Bakery", "Ekmek", "Borek", "Poğaça", "Pogaca", "Çörek", "Corek"],
+            "breakfast"  => ["Kahvaltı", "Kahvalti", "Breakfast"],
+            "snack"      => ["Atıştırmalık", "Atistirmalik", "Snack"],
             "salata"     => ["Salata"],
-            "dairy"      => ["Süt Ürünleri", "Peynir", "Kahvaltı"],
-            "fruit"      => ["Meyve", "Atıştırmalık"],
+            "dairy"      => ["Süt Ürünleri", "Sut Urunleri", "Dairy", "Peynir", "Kahvaltı", "Kahvalti"],
+            "fruit"      => ["Meyve", "Fruit", "Atıştırmalık", "Atistirmalik"],
             // Eski Türkçe değerler (geriye dönük uyumluluk)
-            "market"     => ["Kahvaltı", "Peynir", "Süt Ürünleri"],
-            "kafe"       => ["İçecek", "Atıştırmalık"],
-            "firin"      => ["Unlu Mamuller"],
-            "icecek"     => ["İçecek"],
+            "market"     => ["Kahvaltı", "Kahvalti", "Peynir", "Süt Ürünleri", "Sut Urunleri"],
+            "kafe"       => ["İçecek", "Icecek", "Atıştırmalık", "Atistirmalik"],
+            "firin"      => ["Unlu Mamuller", "Unlu", "Firincilik", "Firin", "Bakery"],
+            "icecek"     => ["İçecek", "Icecek"],
             _ => []
         };
     }
