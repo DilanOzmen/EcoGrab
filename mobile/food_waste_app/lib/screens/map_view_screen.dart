@@ -20,6 +20,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
   List<Restaurant> _restaurants = [];
   bool _loading = false;
   int _selectedIndex = 0;
+  String _loadError = '';
 
   // Başlangıç konumu: Cihaz konumu varsa orası, yoksa Pendik/İstanbul merkezi
   final LatLng _initialPosition = LatLng(
@@ -40,22 +41,46 @@ class _MapViewScreenState extends State<MapViewScreen> {
   }
 
   Future<void> _fetchRestaurants({String? search}) async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _loadError = '';
+    });
     try {
-      // Koordinat bazlı restoranları çekiyoruz
-      final results = await _apiClient.getRestaurants(
-        search: search,
-        latitude: AppState.latitude,
-        longitude: AppState.longitude,
-        radiusKm: 10,
-      );
+      // Konum bazlı filtre çok dar kaldığında restoran listesi boş dönebiliyor.
+      // Bu durumda konum filtresiz sorguya düşerek dükkan listesini göster.
+      List<Restaurant> results;
+
+      final hasLocation =
+          AppState.latitude != null && AppState.longitude != null;
+
+      if (hasLocation) {
+        results = await _apiClient.getRestaurants(
+          search: search,
+          latitude: AppState.latitude,
+          longitude: AppState.longitude,
+          radiusKm: 25,
+        );
+
+        if (results.isEmpty) {
+          results = await _apiClient.getRestaurants(search: search);
+        }
+      } else {
+        results = await _apiClient.getRestaurants(search: search);
+      }
+
       if (mounted) {
         setState(() {
           _restaurants = results;
+          _selectedIndex = 0;
         });
       }
-    } catch (_) {
-      // Hata durumunda sessizce devam et
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _restaurants = [];
+          _loadError = e.toString().replaceAll('ApiException: ', '');
+        });
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -79,10 +104,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => RestaurantDetailScreen(
-            restaurant: detail,
-            apiClient: _apiClient,
-          ),
+          builder: (_) =>
+              RestaurantDetailScreen(restaurant: detail, apiClient: _apiClient),
         ),
       );
     } catch (e) {
@@ -145,7 +168,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
                     const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1B4332)),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF1B4332),
+                      ),
                     )
                   else
                     Container(
@@ -154,7 +180,11 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         color: const Color(0xFF1B4332),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.tune, color: Colors.white, size: 18),
+                      child: const Icon(
+                        Icons.tune,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                     ),
                 ],
               ),
@@ -177,7 +207,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
     if (_restaurants.isEmpty) {
       return _buildModernBox(
         padding: const EdgeInsets.all(16),
-        child: const Center(child: Text('Dükkan bulunamadı...')),
+        child: Center(
+          child: Text(_loadError.isEmpty ? 'Dükkan bulunamadı...' : _loadError),
+        ),
       );
     }
 
@@ -194,7 +226,11 @@ class _MapViewScreenState extends State<MapViewScreen> {
               color: const Color(0xFFD8F3DC),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.storefront, size: 45, color: Color(0xFF1B4332)),
+            child: const Icon(
+              Icons.storefront,
+              size: 45,
+              color: Color(0xFF1B4332),
+            ),
           ),
           const SizedBox(width: 15),
           Expanded(
@@ -204,10 +240,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
               children: [
                 Text(
                   restaurant.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 Text(
-                  '${restaurant.city} • Pendik',
+                  '${restaurant.city} • ${restaurant.address}',
                   style: const TextStyle(color: Colors.grey, fontSize: 12),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -225,26 +264,43 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         if (_restaurants.length > 1)
                           IconButton(
                             onPressed: () {
-                              int newIdx = _selectedIndex == 0 ? _restaurants.length - 1 : _selectedIndex - 1;
+                              int newIdx = _selectedIndex == 0
+                                  ? _restaurants.length - 1
+                                  : _selectedIndex - 1;
                               _moveToRestaurant(_restaurants[newIdx], newIdx);
                             },
-                            icon: const Icon(Icons.chevron_left, color: Color(0xFF1B4332)),
+                            icon: const Icon(
+                              Icons.chevron_left,
+                              color: Color(0xFF1B4332),
+                            ),
                           ),
                         if (_restaurants.length > 1)
                           IconButton(
                             onPressed: () {
-                              int newIdx = (_selectedIndex + 1) % _restaurants.length;
+                              int newIdx =
+                                  (_selectedIndex + 1) % _restaurants.length;
                               _moveToRestaurant(_restaurants[newIdx], newIdx);
                             },
-                            icon: const Icon(Icons.chevron_right, color: Color(0xFF1B4332)),
+                            icon: const Icon(
+                              Icons.chevron_right,
+                              color: Color(0xFF1B4332),
+                            ),
                           ),
                         ElevatedButton(
                           onPressed: () => _openRestaurantDetail(restaurant),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1B4332),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('Detay', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'Detay',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -258,7 +314,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
     );
   }
 
-  Widget _buildModernBox({required Widget child, EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8)}) {
+  Widget _buildModernBox({
+    required Widget child,
+    EdgeInsets padding = const EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 8,
+    ),
+  }) {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
@@ -267,10 +329,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
         boxShadow: [
           BoxShadow(
             // YENİ: withValues kullanımı (Flutter 3.27+ uyumlu)
-            color: Colors.black.withValues(alpha: 0.1), 
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
-          )
+          ),
         ],
       ),
       child: child,

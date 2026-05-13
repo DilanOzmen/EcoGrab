@@ -105,7 +105,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
     if (selectedFilter == _HomeCategoryFilter.all) {
       productsFuture = _apiClient.getProducts();
     } else {
-      productsFuture = _apiClient.getProducts(homeCategory: selectedFilter.apiValue);
+      productsFuture = _apiClient.getProducts(
+        homeCategory: selectedFilter.apiValue,
+      );
     }
 
     final results = await Future.wait([
@@ -124,12 +126,27 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
   }
 
   Future<List<CustomerOrder>> _loadOrdersData() async {
-    final results = await Future.wait([
-      _apiClient.getMyOrders(),
-      _apiClient.getMyReservations(),
-    ]);
+    List<CustomerOrder> orders = [];
+    List<CustomerOrder> reservations = [];
+    Object? lastError;
 
-    final merged = <CustomerOrder>[...results[0], ...results[1]];
+    try {
+      orders = await _apiClient.getMyOrders();
+    } catch (e) {
+      lastError = e;
+    }
+
+    try {
+      reservations = await _apiClient.getMyReservations();
+    } catch (e) {
+      lastError = e;
+    }
+
+    if (orders.isEmpty && reservations.isEmpty && lastError != null) {
+      throw lastError;
+    }
+
+    final merged = <CustomerOrder>[...orders, ...reservations];
     final unique = <int, CustomerOrder>{};
 
     for (final order in merged) {
@@ -300,9 +317,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
             return _buildErrorState(
               title: 'Veriler yüklenemedi',
               message: snapshot.error.toString().replaceAll(
-                    'ApiException: ',
-                    '',
-                  ),
+                'ApiException: ',
+                '',
+              ),
             );
           }
 
@@ -379,7 +396,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
                         else
                           ...data.products
                               .take(8)
-                              .map((product) => _buildSimpleProductCard(product)),
+                              .map(
+                                (product) => _buildSimpleProductCard(product),
+                              ),
                       ],
                     ),
                   ),
@@ -529,9 +548,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => const ChatBotScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const ChatBotScreen()),
           );
         },
         child: AnimatedContainer(
@@ -1091,9 +1108,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
             return _buildErrorState(
               title: 'Siparişler yüklenemedi',
               message: snapshot.error.toString().replaceAll(
-                    'ApiException: ',
-                    '',
-                  ),
+                'ApiException: ',
+                '',
+              ),
             );
           }
 
@@ -1387,12 +1404,7 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          _buildBody(),
-          _buildFloatingChatBot(),
-        ],
-      ),
+      body: Stack(children: [_buildBody(), _buildFloatingChatBot()]),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
@@ -1482,22 +1494,22 @@ enum _HomeCategoryFilter {
 
 extension on _HomeCategoryFilter {
   String get label => switch (this) {
-        _HomeCategoryFilter.all => 'Tümü',
-        _HomeCategoryFilter.tatlilar => 'Tatlılar',
-        _HomeCategoryFilter.unluMamuller => 'Unlu',
-        _HomeCategoryFilter.yemekler => 'Yemekler',
-        _HomeCategoryFilter.icecekler => 'İçecekler',
-        _HomeCategoryFilter.meze => 'Meze',
-        _HomeCategoryFilter.salata => 'Salata',
-      };
+    _HomeCategoryFilter.all => 'Tümü',
+    _HomeCategoryFilter.tatlilar => 'Tatlılar',
+    _HomeCategoryFilter.unluMamuller => 'Unlu',
+    _HomeCategoryFilter.yemekler => 'Yemekler',
+    _HomeCategoryFilter.icecekler => 'İçecekler',
+    _HomeCategoryFilter.meze => 'Meze',
+    _HomeCategoryFilter.salata => 'Salata',
+  };
 
   String get apiValue => switch (this) {
-        _HomeCategoryFilter.all => '',
-        _HomeCategoryFilter.tatlilar => 'desserts',
-        _HomeCategoryFilter.unluMamuller => 'bakery',
-        _HomeCategoryFilter.yemekler => 'meal',
-        _HomeCategoryFilter.icecekler => 'drinks',
-        _HomeCategoryFilter.meze => 'meze',
-        _HomeCategoryFilter.salata => 'salata',
-      };
+    _HomeCategoryFilter.all => '',
+    _HomeCategoryFilter.tatlilar => 'desserts',
+    _HomeCategoryFilter.unluMamuller => 'bakery',
+    _HomeCategoryFilter.yemekler => 'meal',
+    _HomeCategoryFilter.icecekler => 'drinks',
+    _HomeCategoryFilter.meze => 'meze',
+    _HomeCategoryFilter.salata => 'salata',
+  };
 }

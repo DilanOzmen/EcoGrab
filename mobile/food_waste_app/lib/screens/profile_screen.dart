@@ -58,10 +58,22 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<Map<String, dynamic>> _loadProfile() async {
-    final data = await widget.apiClient.getMe();
-    _fullNameController.text = data['fullName']?.toString() ?? '';
-    _phoneController.text = data['phone']?.toString() ?? '';
-    return data;
+    try {
+      final data = await widget.apiClient.getMe();
+      _fullNameController.text = data['fullName']?.toString() ?? '';
+      _phoneController.text = data['phone']?.toString() ?? '';
+      return data;
+    } catch (_) {
+      final fallback = <String, dynamic>{
+        'fullName': AppState.currentUser?.fullName ?? 'Kullanıcı',
+        'email': AppState.currentUser?.email ?? '-',
+        'role': AppState.currentUser?.role ?? '-',
+        'phone': '-',
+      };
+      _fullNameController.text = fallback['fullName'].toString();
+      _phoneController.text = fallback['phone'].toString();
+      return fallback;
+    }
   }
 
   @override

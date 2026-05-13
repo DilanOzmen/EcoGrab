@@ -105,9 +105,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   const SizedBox(height: 18),
                   _descriptionCard(),
                   const SizedBox(height: 18),
-                  if (widget.product.expiryDate != null) _expiryCard(),
-                  if (widget.product.expiryDate != null)
-                    const SizedBox(height: 18),
                   if (_error.isNotEmpty) _errorCard(),
                   if (_error.isNotEmpty) const SizedBox(height: 18),
                   _quantityCard(),
@@ -356,38 +353,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               fontSize: 13,
               height: 1.55,
               fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _expiryCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.secondaryOrange.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: AppColors.secondaryOrange.withValues(alpha: 0.20),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.event_available_rounded,
-            color: AppColors.secondaryOrange,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Son kullanma: ${widget.product.expiryDate}',
-              style: GoogleFonts.manrope(
-                color: AppColors.secondaryOrange,
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-              ),
             ),
           ),
         ],

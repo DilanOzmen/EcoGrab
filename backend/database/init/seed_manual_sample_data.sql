@@ -24,21 +24,21 @@ GO
 INSERT INTO Restaurants (Name, Address, City, Phone, CreatedAt, OwnerUserId, Latitude, Longitude, IsDeleted, UpdatedAt, DeletedAt)
 SELECT seed.Name, seed.Address, seed.City, seed.Phone, SYSUTCDATETIME(), users.Id, seed.Latitude, seed.Longitude, 0, SYSUTCDATETIME(), NULL
 FROM (VALUES
-    ('Lezzet Sofrasi', 'Kadikoy Merkez', 'Istanbul', '02160000011', 'yagmur@mail.com', CAST(40.9901 AS float), CAST(29.0284 AS float)),
-    ('Taze Marketim', 'Besiktas Merkez', 'Istanbul', '02160000012', 'ahmet@mail.com', CAST(41.0422 AS float), CAST(29.0083 AS float)),
-    ('Kahve Molasi', 'Sisli Merkez', 'Istanbul', '02160000013', 'merve@mail.com', CAST(41.0600 AS float), CAST(28.9870 AS float)),
-    ('Donerci Ali', 'Uskudar Merkez', 'Istanbul', '02160000014', 'can@mail.com', CAST(41.0267 AS float), CAST(29.0167 AS float)),
-    ('Yesil Bakkal', 'Maltepe Merkez', 'Istanbul', '02160000015', 'zeynep@mail.com', CAST(40.9443 AS float), CAST(29.1325 AS float)),
-    ('Gunes Kafe', 'Kadikoy Moda', 'Istanbul', '02160000016', 'ali@mail.com', CAST(40.9811 AS float), CAST(29.0234 AS float)),
-    ('Anadolu Lokantasi', 'Pendik Merkez', 'Istanbul', '02160000017', 'fatma@mail.com', CAST(40.8767 AS float), CAST(29.2325 AS float)),
-    ('Super Market', 'Atasehir Merkez', 'Istanbul', '02160000018', 'murat@mail.com', CAST(40.9847 AS float), CAST(29.1067 AS float)),
-    ('Deniz Manzarasi Kafe', 'Sariyer Merkez', 'Istanbul', '02160000019', 'gamze@mail.com', CAST(41.1667 AS float), CAST(29.0500 AS float)),
-    ('Kose Restoran', 'Fatih Merkez', 'Istanbul', '02160000020', 'huseyin@mail.com', CAST(41.0122 AS float), CAST(28.9760 AS float)),
-    ('Mini Market', 'Kartal Merkez', 'Istanbul', '02160000021', 'yagmur@mail.com', CAST(40.8886 AS float), CAST(29.1856 AS float)),
-    ('Tatli Dunyasi', 'Beyoglu Merkez', 'Istanbul', '02160000022', 'ahmet@mail.com', CAST(41.0370 AS float), CAST(28.9763 AS float)),
-    ('Ev Yemekleri', 'Bakirkoy Merkez', 'Istanbul', '02160000023', 'merve@mail.com', CAST(40.9780 AS float), CAST(28.8710 AS float)),
-    ('Doga Market', 'Beykoz Merkez', 'Istanbul', '02160000024', 'can@mail.com', CAST(41.1167 AS float), CAST(29.1000 AS float)),
-    ('Kitap Kafe', 'Moda Sahil', 'Istanbul', '02160000025', 'zeynep@mail.com', CAST(40.9850 AS float), CAST(29.0250 AS float))
+    ('Lezzet Sofrasi', 'Kadiköy Merkez, Saklı Sokak 5', 'Kadiköy', '02160000011', 'yagmur@mail.com', CAST(40.9901 AS float), CAST(29.0284 AS float)),
+    ('Taze Marketim', 'Beşiktaş Merkez, Abbasağa Cad 12', 'Beşiktaş', '02160000012', 'ahmet@mail.com', CAST(41.0422 AS float), CAST(29.0083 AS float)),
+    ('Kahve Molasi', 'Şişli Merkez, Teşvikiye Cad 8', 'Şişli', '02160000013', 'merve@mail.com', CAST(41.0600 AS float), CAST(28.9870 AS float)),
+    ('Donerci Ali', 'Üsküdar Merkez, Kuzguncuk Sokak 3', 'Üsküdar', '02160000014', 'can@mail.com', CAST(41.0267 AS float), CAST(29.0167 AS float)),
+    ('Yesil Bakkal', 'Maltepe Merkez, Bağdat Cad 45', 'Maltepe', '02160000015', 'zeynep@mail.com', CAST(40.9443 AS float), CAST(29.1325 AS float)),
+    ('Gunes Kafe', 'Kadiköy Moda, Fenerbahçe Cad 22', 'Kadiköy', '02160000016', 'ali@mail.com', CAST(40.9811 AS float), CAST(29.0234 AS float)),
+    ('Anadolu Lokantasi', 'Pendik Merkez, İdealtepe Cad 15', 'Pendik', '02160000017', 'fatma@mail.com', CAST(40.8767 AS float), CAST(29.2325 AS float)),
+    ('Super Market', 'Ataşehir Merkez, Barbaros Cad 7', 'Ataşehir', '02160000018', 'murat@mail.com', CAST(40.9847 AS float), CAST(29.1067 AS float)),
+    ('Deniz Manzarasi Kafe', 'Sarıyer Merkez, Sahil Cad 33', 'Sarıyer', '02160000019', 'gamze@mail.com', CAST(41.1667 AS float), CAST(29.0500 AS float)),
+    ('Kose Restoran', 'Fatih Merkez, İstiklal Cad 19', 'Fatih', '02160000020', 'huseyin@mail.com', CAST(41.0122 AS float), CAST(28.9760 AS float)),
+    ('Mini Market', 'Kartal Merkez, Aydın Cad 11', 'Kartal', '02160000021', 'yagmur@mail.com', CAST(40.8886 AS float), CAST(29.1856 AS float)),
+    ('Tatli Dunyasi', 'Beyoğlu Merkez, İstiklal Cad 56', 'Beyoğlu', '02160000022', 'ahmet@mail.com', CAST(41.0370 AS float), CAST(28.9763 AS float)),
+    ('Ev Yemekleri', 'Bakırköy Merkez, Bakırköy Cad 28', 'Bakırköy', '02160000023', 'merve@mail.com', CAST(40.9780 AS float), CAST(28.8710 AS float)),
+    ('Doga Market', 'Beykoz Merkez, Sarı Başak Cad 9', 'Beykoz', '02160000024', 'can@mail.com', CAST(41.1167 AS float), CAST(29.1000 AS float)),
+    ('Kitap Kafe', 'Kadiköy Moda Sahil, Cevdet Pasha Cad 41', 'Kadiköy', '02160000025', 'zeynep@mail.com', CAST(40.9850 AS float), CAST(29.0250 AS float))
 ) AS seed(Name, Address, City, Phone, OwnerEmail, Latitude, Longitude)
 INNER JOIN Users AS users ON users.Email = seed.OwnerEmail AND users.IsDeleted = 0
 WHERE NOT EXISTS (
