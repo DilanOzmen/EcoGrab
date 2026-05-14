@@ -7,6 +7,9 @@ class AppState {
   AppState._();
 
   static const String _userStorageKey = 'current_user';
+  static const String _locationLatKey = 'location_latitude';
+  static const String _locationLngKey = 'location_longitude';
+  static const String _locationAddressKey = 'location_address';
 
   static AuthResponse? _currentUser;
   
@@ -50,11 +53,35 @@ class AppState {
     await prefs.setString(_userStorageKey, jsonEncode(user.toJson()));
   }
 
-  // Konumu güncellemek için yardımcı metod
-  static void setLocation(double lat, double lng, {String? address}) {
+  // Konumu güncellemek ve kaydetmek için yardımcı metod
+  static Future<void> setLocation(double lat, double lng, {String? address}) async {
     latitude = lat;
     longitude = lng;
     currentAddress = address;
+    
+    // SharedPreferences'e kaydet
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_locationLatKey, lat);
+      await prefs.setDouble(_locationLngKey, lng);
+      if (address != null) {
+        await prefs.setString(_locationAddressKey, address);
+      }
+    } catch (_) {
+      // Hata olsa da bellek'te tutmaya devam et
+    }
+  }
+
+  // Kaydedilmiş konumu yükle
+  static Future<void> loadLocation() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      latitude = prefs.getDouble(_locationLatKey);
+      longitude = prefs.getDouble(_locationLngKey);
+      currentAddress = prefs.getString(_locationAddressKey);
+    } catch (_) {
+      // Yükleme hatası - defaults kalır
+    }
   }
 
   static Future<void> clear() async {
@@ -65,5 +92,8 @@ class AppState {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userStorageKey);
+    await prefs.remove(_locationLatKey);
+    await prefs.remove(_locationLngKey);
+    await prefs.remove(_locationAddressKey);
   }
 }

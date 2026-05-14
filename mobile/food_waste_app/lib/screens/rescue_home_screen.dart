@@ -93,7 +93,9 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
   Future<_HomeData> _bootstrapHomeData() async {
     try {
       await LocationService.fetchAndSaveLocation();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint("İlk konum alınırken hata: $e");
+    }
 
     return _loadHomeData(_HomeCategoryFilter.all);
   }
@@ -260,12 +262,31 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
   }
 
   Widget _buildLocationBar() {
-    final address = AppState.currentAddress ?? "Konum alındı";
+    final address = AppState.currentAddress ?? "Konumunuz alınıyor...";
 
     return GestureDetector(
       onTap: () async {
-        await LocationService.fetchAndSaveLocation();
-        _refreshHome();
+        // Konum güncelle
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Konumunuz güncelleniyor...')),
+        );
+        try {
+          await LocationService.fetchAndSaveLocation();
+          if (mounted) {
+            setState(() {
+              _homeFuture = _loadHomeData(_selectedHomeFilter);
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Konum güncellendi!')),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Konum hatası: $e')),
+            );
+          }
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -282,12 +303,16 @@ class _RescueHomeScreenState extends State<RescueHomeScreen>
               size: 16,
             ),
             const SizedBox(width: 6),
-            Text(
-              address,
-              style: GoogleFonts.manrope(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primaryGreen,
+            Flexible(
+              child: Text(
+                address,
+                style: GoogleFonts.manrope(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryGreen,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             const SizedBox(width: 4),
