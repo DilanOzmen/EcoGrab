@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "p7AsfVZb6Qo=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\yagmu\\OneDrive\\Desktop\\food_waste_platform\\backend\\_tmp_hashgen2\\HashGenTemp.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\yagmu\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

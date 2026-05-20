@@ -8,6 +8,8 @@ import 'package:food_waste_app/core/app_colors.dart';
 import 'package:food_waste_app/core/app_spacing.dart';
 import 'package:food_waste_app/core/app_state.dart';
 import 'package:food_waste_app/core/app_text_styles.dart';
+import 'package:food_waste_app/data/services/api_client.dart';
+import 'package:food_waste_app/data/services/location_service.dart';
 
 class ChatBotScreen extends StatefulWidget {
   const ChatBotScreen({super.key});
@@ -26,8 +28,7 @@ class _ChatBotScreenState extends State<ChatBotScreen>
 
   bool _isLoading = false;
 
-  static const String _baseUrl = 'http://10.0.2.2:5141';
-  static const String _chatEndpoint = '$_baseUrl/api/Chat/ask';
+  static String get _chatEndpoint => '${ApiClient.baseUrl}/api/Chat/ask';
 
   final List<_ChatMessage> _messages = [
     _ChatMessage(
@@ -71,6 +72,14 @@ void initState() {
     _scrollToBottom();
 
     try {
+      if (AppState.latitude == null || AppState.longitude == null) {
+        try {
+          await LocationService.fetchAndSaveLocation();
+        } catch (_) {
+          // If location cannot be fetched, backend still handles request with broader context.
+        }
+      }
+
       final response = await http.post(
         Uri.parse(_chatEndpoint),
         headers: {'Content-Type': 'application/json'},

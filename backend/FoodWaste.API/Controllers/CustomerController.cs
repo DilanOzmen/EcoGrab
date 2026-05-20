@@ -25,8 +25,28 @@ public class CustomerController(ICustomerService customerService, FoodWasteDbCon
         [FromQuery] string? city,
         [FromQuery] string? search,
         [FromQuery] string? homeCategory,
+        [FromQuery] double? latitude,
+        [FromQuery] double? longitude,
+        [FromQuery] double? radiusKm,
         CancellationToken cancellationToken)
     {
+        if (latitude.HasValue && longitude.HasValue)
+        {
+            var resolvedRadiusKm = radiusKm.GetValueOrDefault(10);
+            if (resolvedRadiusKm <= 0)
+            {
+                return BadRequest(new ApiErrorResponse("Yaricap 0'dan buyuk olmalidir."));
+            }
+
+            var nearbyRestaurants = await customerService.GetNearbyRestaurantsAsync(
+                latitude.Value,
+                longitude.Value,
+                resolvedRadiusKm,
+                cancellationToken);
+
+            return Ok(nearbyRestaurants);
+        }
+
         var restaurants = await customerService.GetRestaurantsAsync(city, search, homeCategory, cancellationToken);
         return Ok(restaurants);
     }

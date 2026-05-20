@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="c781d579-2bd0-4acd-90cc-6e3fb1ff5f03" name="rain@RAIN 2026-05-18 15:09:22" runUser="RAIN\rain" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-05-18T15:09:22.6312745+03:00" queuing="2026-05-18T15:09:22.6312749+03:00" start="2026-05-18T15:09:16.5668184+03:00" finish="2026-05-18T15:09:23.3210370+03:00" />
+  <TestSettings name="default" id="fd1f080f-4361-4258-a929-ad0d5401bc37">
+    <Deployment runDeploymentRoot="rain_RAIN_2026-05-18_15_09_22" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="90e74986-6ac1-4d44-8f8f-0ef6837f1864" testId="81012e8d-ca5e-66af-b27c-2ad27d6efe6e" testName="FoodWaste.Tests.Services.AuthServiceTests.RegisterAsync_AdminRole_ReturnsFailure" computerName="RAIN" duration="00:00:00.0087785" startTime="2026-05-18T15:09:22.6000485+03:00" endTime="2026-05-18T15:09:22.6000487+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="90e74986-6ac1-4d44-8f8f-0ef6837f1864" />
+    <UnitTestResult executionId="0bed463b-edf3-42c9-822f-4fbfc958fa6a" testId="85fc98a5-e1e0-8f12-7233-b4f6b5551502" testName="FoodWaste.Tests.Services.SellerServiceTests.UpdateProductAsync_DeactivateWithOpenOrders_ReturnsNull" computerName="RAIN" duration="00:00:00.7380835" startTime="2026-05-18T15:09:22.0348527+03:00" endTime="2026-05-18T15:09:22.0348531+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0bed463b-edf3-42c9-822f-4fbfc958fa6a" />
+    <UnitTestResult executionId="8a214788-e6a5-4084-ab66-084329cf3f91" testId="9b4a7da0-71e2-0269-c602-bf68e074ff9e" testName="FoodWaste.Tests.Services.AuthValidationServiceTests.ValidateRegister_ValidCustomer_ReturnsNoErrors" computerName="RAIN" duration="00:00:00.0078388" startTime="2026-05-18T15:09:21.3220046+03:00" endTime="2026-05-18T15:09:21.3220047+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8a214788-e6a5-4084-ab66-084329cf3f91" />
+    <UnitTestResult executionId="da2157fa-ff2d-4dee-a0b7-8f364c21f48b" testId="54ac246b-18bd-ca12-a05c-66b60e2e1234" testName="FoodWaste.Tests.Services.AuthValidationServiceTests.ValidateLogin_InvalidEmailAndEmptyPassword_ReturnsTwoErrors" computerName="RAIN" duration="00:00:00.0118964" startTime="2026-05-18T15:09:21.3116312+03:00" endTime="2026-05-18T15:09:21.3116550+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="da2157fa-ff2d-4dee-a0b7-8f364c21f48b" />
+    <UnitTestResult executionId="602c2fbf-cf54-4476-9368-165a0b787e50" testId="e25c1c59-46bd-2793-8160-86b02c5a6d97" testName="FoodWaste.Tests.Services.CustomerServiceTests.GetProductDetailAsync_ReturnsNull_ForNonDiscountedProduct" computerName="RAIN" duration="00:00:00.7108426" startTime="2026-05-18T15:09:22.0076620+03:00" endTime="2026-05-18T15:09:22.0076623+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="602c2fbf-cf54-4476-9368-165a0b787e50" />
+    <UnitTestResult executionId="dde4bb96-7149-4740-a96b-74ef279e41e4" testId="9683fde1-4467-ab73-c306-1380dc17b1f8" testName="FoodWaste.Tests.Services.AuthValidationServiceTests.ValidateRegister_InvalidRole_ReturnsRoleError" computerName="RAIN" duration="00:00:00.0007488" startTime="2026-05-18T15:09:21.3229107+03:00" endTime="2026-05-18T15:09:21.3229108+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dde4bb96-7149-4740-a96b-74ef279e41e4" />
+    <UnitTestResult executionId="796d31dc-c995-4fb0-a8c7-8641276b3407" testId="e20b2f0d-28d7-31b4-1de8-cacf48c003d0" testName="FoodWaste.Tests.Services.AuthServiceTests.LoginAsync_ValidCredentials_UpdatesLastLoginAt" computerName="RAIN" duration="00:00:00.3881166" startTime="2026-05-18T15:09:22.5703595+03:00" endTime="2026-05-18T15:09:22.5703598+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="796d31dc-c995-4fb0-a8c7-8641276b3407" />
+    <UnitTestResult executionId="b128f993-74a3-4b3d-b5b4-74f2fb9d7807" testId="da3f5dba-dbd8-8848-3ea2-6cf24beb424a" testName="FoodWaste.Tests.Services.AuthServiceTests.LoginAsync_InactiveUser_ReturnsFailure" computerName="RAIN" duration="00:00:00.3185178" startTime="2026-05-18T15:09:22.8996030+03:00" endTime="2026-05-18T15:09:22.8996036+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b128f993-74a3-4b3d-b5b4-74f2fb9d7807" />
+    <UnitTestResult executionId="c4482c4e-cbd7-4f0b-a954-26dcad6816fa" testId="af350753-9b5f-158e-8d0c-44c5574837b3" testName="FoodWaste.Tests.Services.AuthServiceTests.RegisterAsync_Seller_SetsIsApprovedFalse" computerName="RAIN" duration="00:00:00.8853063" startTime="2026-05-18T15:09:22.1820870+03:00" endTime="2026-05-18T15:09:22.1820873+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c4482c4e-cbd7-4f0b-a954-26dcad6816fa" />
+    <UnitTestResult executionId="1d97ee76-ae6d-4dec-a480-7d577b11e130" testId="545a2910-a539-0c14-65c4-ae94ae27ea22" testName="FoodWaste.Tests.Services.CustomerServiceTests.GetProductsAsync_ReturnsOnlyDiscountedProducts" computerName="RAIN" duration="00:00:00.0351457" startTime="2026-05-18T15:09:22.0846835+03:00" endTime="2026-05-18T15:09:22.0846839+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1d97ee76-ae6d-4dec-a480-7d577b11e130" />
+    <UnitTestResult executionId="41a81660-1ef8-433a-a3a7-2508a849e23a" testId="73508660-9e43-f5b3-c7ee-fb9b69133158" testName="FoodWaste.Tests.Services.CustomerServiceTests.GetProductDetailAsync_ReturnsProduct_ForDiscountedActiveProduct" computerName="RAIN" duration="00:00:00.0417245" startTime="2026-05-18T15:09:22.0494401+03:00" endTime="2026-05-18T15:09:22.0494405+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="41a81660-1ef8-433a-a3a7-2508a849e23a" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="FoodWaste.Tests.Services.CustomerServiceTests.GetProductDetailAsync_ReturnsNull_ForNonDiscountedProduct" storage="c:\users\yagmu\onedrive\desktop\food_waste_platform\backend\foodwaste.tests\bin\release\net9.0\foodwaste.tests.dll" id="e25c1c59-46bd-2793-8160-86b02c5a6d97">
+      <Execution id="602c2fbf-cf54-4476-9368-165a0b787e50" />
+      <TestMethod codeBase="C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Tests\bin\Release\net9.0\FoodWaste.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="FoodWaste.Tests.Services.CustomerServiceTests" name="GetProductDetailAsync_ReturnsNull_ForNonDiscountedProduct" />
+    </UnitTest>
+    <UnitTest name="FoodWaste.Tests.Services.AuthServiceTests.RegisterAsync_Seller_SetsIsApprovedFalse" storage="c:\users\yagmu\onedrive\desktop\food_waste_platform\backend\foodwaste.tests\bin\release\net9.0\foodwaste.tests.dll" id="af350753-9b5f-158e-8d0c-44c5574837b3">
+      <Execution id="c4482c4e-cbd7-4f0b-a954-26dcad6816fa" />
+      <TestMethod codeBase="C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Tests\bin\Release\net9.0\FoodWaste.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="FoodWaste.Tests.Services.AuthServiceTests" name="RegisterAsync_Seller_SetsIsApprovedFalse" />
+    </UnitTest>
+    <UnitTest name="FoodWaste.Tests.Services.AuthServiceTests.RegisterAsync_AdminRole_ReturnsFailure" storage="c:\users\yagmu\onedrive\desktop\food_waste_platform\backend\foodwaste.tests\bin\release\net9.0\foodwaste.tests.dll" id="81012e8d-ca5e-66af-b27c-2ad27d6efe6e">
+      <Execution id="90e74986-6ac1-4d44-8f8f-0ef6837f1864" />
+      <TestMethod codeBase="C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Tests\bin\Release\net9.0\FoodWaste.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="FoodWaste.Tests.Services.AuthServiceTests" name="RegisterAsync_AdminRole_ReturnsFailure" />
+    </UnitTest>
+    <UnitTest name="FoodWaste.Tests.Services.AuthValidationServiceTests.ValidateRegister_InvalidRole_ReturnsRoleError" storage="c:\users\yagmu\onedrive\desktop\food_waste_platform\backend\foodwaste.tests\bin\release\net9.0\foodwaste.tests.dll" id="9683fde1-4467-ab73-c306-1380dc17b1f8">
+      <Execution id="dde4bb96-7149-4740-a96b-74ef279e41e4" />
+      <TestMethod codeBase="C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Tests\bin\Release\net9.0\FoodWaste.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="FoodWaste.Tests.Services.AuthValidationServiceTests" name="ValidateRegister_InvalidRole_ReturnsRoleError" />
+    </UnitTest>
+    <UnitTest name="FoodWaste.Tests.Services.AuthValidationServiceTests.ValidateLogin_InvalidEmailAndEmptyPassword_ReturnsTwoErrors" storage="c:\users\yagmu\onedrive\desktop\food_waste_platform\backend\foodwaste.tests\bin\release\net9.0\foodwaste.tests.dll" id="54ac246b-18bd-ca12-a05c-66b60e2e1234">
+      <Execution id="da2157fa-ff2d-4dee-a0b7-8f364c21f48b" />
+      <TestMethod codeBase="C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Tests\bin\Release\net9.0\FoodWaste.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="FoodWaste.Tests.Services.AuthValidationServiceTests" name="ValidateLogin_InvalidEmailAndEmptyPassword_ReturnsTwoErrors" />
+    </UnitTest>
+    <UnitTest name="FoodWaste.Tests.Services.AuthServiceTests.LoginAsync_InactiveUser_ReturnsFailure" storage="c:\users\yagmu\onedrive\desktop\food_waste_platform\backend\foodwaste.tests\bin\release\net9.0\foodwaste.tests.dll" id="da3f5dba-dbd8-8848-3ea2-6cf24beb424a">
+      <Execution id="b128f993-74a3-4b3d-b5b4-74f2fb9d7807" />
+      <TestMethod codeBase="C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Tests\bin\Release\net9.0\FoodWaste.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="FoodWaste.Tests.Services.AuthServiceTests" name="LoginAsync_InactiveUser_ReturnsFailure" />
+    </UnitTest>
+    <UnitTest name="FoodWaste.Tests.Services.CustomerServiceTests.GetProductsAsync_ReturnsOnlyDiscountedProducts" storage="c:\users\yagmu\onedrive\desktop\food_waste_platform\backend\foodwaste.tests\bin\release\net9.0\foodwaste.tests.dll" id="545a2910-a539-0c14-65c4-ae94ae27ea22">
+      <Execution id="1d97ee76-ae6d-4dec-a480-7d577b11e130" />
+      <TestMethod codeBase="C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Tests\bin\Release\net9.0\FoodWaste.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="FoodWaste.Tests.Services.CustomerServiceTests" name="GetProductsAsync_ReturnsOnlyDiscountedProducts" />
+    </UnitTest>
+    <UnitTest name="FoodWaste.Tests.Services.CustomerServiceTests.GetProductDetailAsync_ReturnsProduct_ForDiscountedActiveProduct" storage="c:\users\yagmu\onedrive\desktop\food_waste_platform\backend\foodwaste.tests\bin\release\net9.0\foodwaste.tests.dll" id="73508660-9e43-f5b3-c7ee-fb9b69133158">
+      <Execution id="41a81660-1ef8-433a-a3a7-2508a849e23a" />
+      <TestMethod codeBase="C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Tests\bin\Release\net9.0\FoodWaste.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="FoodWaste.Tests.Services.CustomerServiceTests" name="GetProductDetailAsync_ReturnsProduct_ForDiscountedActiveProduct" />
+    </UnitTest>
+    <UnitTest name="FoodWaste.Tests.Services.SellerServiceTests.UpdateProductAsync_DeactivateWithOpenOrders_ReturnsNull" storage="c:\users\yagmu\onedrive\desktop\food_waste_platform\backend\foodwaste.tests\bin\release\net9.0\foodwaste.tests.dll" id="85fc98a5-e1e0-8f12-7233-b4f6b5551502">
+      <Execution id="0bed463b-edf3-42c9-822f-4fbfc958fa6a" />
+      <TestMethod codeBase="C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Tests\bin\Release\net9.0\FoodWaste.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="FoodWaste.Tests.Services.SellerServiceTests" name="UpdateProductAsync_DeactivateWithOpenOrders_ReturnsNull" />
+    </UnitTest>
+    <UnitTest name="FoodWaste.Tests.Services.AuthServiceTests.LoginAsync_ValidCredentials_UpdatesLastLoginAt" storage="c:\users\yagmu\onedrive\desktop\food_waste_platform\backend\foodwaste.tests\bin\release\net9.0\foodwaste.tests.dll" id="e20b2f0d-28d7-31b4-1de8-cacf48c003d0">
+      <Execution id="796d31dc-c995-4fb0-a8c7-8641276b3407" />
+      <TestMethod codeBase="C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Tests\bin\Release\net9.0\FoodWaste.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="FoodWaste.Tests.Services.AuthServiceTests" name="LoginAsync_ValidCredentials_UpdatesLastLoginAt" />
+    </UnitTest>
+    <UnitTest name="FoodWaste.Tests.Services.AuthValidationServiceTests.ValidateRegister_ValidCustomer_ReturnsNoErrors" storage="c:\users\yagmu\onedrive\desktop\food_waste_platform\backend\foodwaste.tests\bin\release\net9.0\foodwaste.tests.dll" id="9b4a7da0-71e2-0269-c602-bf68e074ff9e">
+      <Execution id="8a214788-e6a5-4084-ab66-084329cf3f91" />
+      <TestMethod codeBase="C:\Users\yagmu\OneDrive\Desktop\food_waste_platform\backend\FoodWaste.Tests\bin\Release\net9.0\FoodWaste.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="FoodWaste.Tests.Services.AuthValidationServiceTests" name="ValidateRegister_ValidCustomer_ReturnsNoErrors" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="81012e8d-ca5e-66af-b27c-2ad27d6efe6e" executionId="90e74986-6ac1-4d44-8f8f-0ef6837f1864" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="85fc98a5-e1e0-8f12-7233-b4f6b5551502" executionId="0bed463b-edf3-42c9-822f-4fbfc958fa6a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9b4a7da0-71e2-0269-c602-bf68e074ff9e" executionId="8a214788-e6a5-4084-ab66-084329cf3f91" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="54ac246b-18bd-ca12-a05c-66b60e2e1234" executionId="da2157fa-ff2d-4dee-a0b7-8f364c21f48b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e25c1c59-46bd-2793-8160-86b02c5a6d97" executionId="602c2fbf-cf54-4476-9368-165a0b787e50" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9683fde1-4467-ab73-c306-1380dc17b1f8" executionId="dde4bb96-7149-4740-a96b-74ef279e41e4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e20b2f0d-28d7-31b4-1de8-cacf48c003d0" executionId="796d31dc-c995-4fb0-a8c7-8641276b3407" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="da3f5dba-dbd8-8848-3ea2-6cf24beb424a" executionId="b128f993-74a3-4b3d-b5b4-74f2fb9d7807" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="af350753-9b5f-158e-8d0c-44c5574837b3" executionId="c4482c4e-cbd7-4f0b-a954-26dcad6816fa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="545a2910-a539-0c14-65c4-ae94ae27ea22" executionId="1d97ee76-ae6d-4dec-a480-7d577b11e130" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="73508660-9e43-f5b3-c7ee-fb9b69133158" executionId="41a81660-1ef8-433a-a3a7-2508a849e23a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Bir Listede Olmayan Sonuçlar" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="Yüklenen Tüm Sonuçlar" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="11" executed="11" passed="11" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 9.0.12)&#xD;
+[xUnit.net 00:00:00.07]   Discovering: FoodWaste.Tests&#xD;
+[xUnit.net 00:00:00.11]   Discovered:  FoodWaste.Tests&#xD;
+[xUnit.net 00:00:00.11]   Starting:    FoodWaste.Tests&#xD;
+[xUnit.net 00:00:01.75]   Finished:    FoodWaste.Tests&#xD;
+</StdOut>
+    </Output>
+    <CollectorDataEntries>
+      <Collector agentName="RAIN" uri="datacollector://microsoft/CoverletCodeCoverage/1.0" collectorDisplayName="XPlat code coverage">
+        <UriAttachments>
+          <UriAttachment>
+            <A href="RAIN\coverage.cobertura.xml"></A>
+          </UriAttachment>
+        </UriAttachments>
+      </Collector>
+    </CollectorDataEntries>
+  </ResultSummary>
+</TestRun>
